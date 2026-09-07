@@ -1,0 +1,8 @@
+# Normalitza els finals de linia al repositori (LF) i deixa que cada
+# sistema operatiu faci la conversio a la copia de treball.
+* text=auto eol=lf
+
+*.png binary
+*.ico binary
+*.woff binary
+*.woff2 binary

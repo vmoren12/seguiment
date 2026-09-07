@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="ca">
+<head>
+<meta charset="utf-8">
+<title>Seguiment — autodiagnòstic</title>
+<style>body{font:14px system-ui;margin:20px}li{margin:2px 0}.ko{color:#a33}.ok{color:#276}</style>
+</head>
+<body>
+<h1>Autodiagnòstic</h1>
+<p>Comprova que tots els mòduls carreguen i que cada vista es renderitza sense errors.</p>
+<ul id="out"></ul>
+<p id="summary">…</p>
+
+<script type="module">
+const out = document.getElementById('out');
+let pass = 0; let fail = 0;
+const errors = [];
+
+window.addEventListener('error', (e) => errors.push(`window.onerror: ${e.message}`));
+window.addEventListener('unhandledrejection', (e) => errors.push(`rejection: ${e.reason}`));
+
+function check(name, fn) {
+  const li = document.createElement('li');
+  try {
+    const value = fn();
+    li.className = 'ok';
+    li.textContent = `OK  ${name}${value !== undefined ? ` — ${value}` : ''}`;
+    pass += 1;
+  } catch (error) {
+    li.className = 'ko';
+    li.textContent = `KO  ${name} — ${error && error.stack ? error.stack.split('\n').slice(0, 3).join(' | ') : error}`;
+    fail += 1;
+  }
+  out.appendChild(li);
+}
+
+const base = '../js';
+const store = await import(`${base}/core/store.js`);
+const schema = await import(`${base}/domain/schema.js`);
+const sel = await import(`${base}/domain/selectors.js`);
+const act = await import(`${base}/domain/actions.js`);
+const stats = await import(`${base}/domain/stats.js`);
+const demo = await import(`${base}/domain/demo.js`);
+const dates = await import(`${base}/core/dates.js`);
+const i18n = await import(`${base}/core/i18n.js`);
+const exportMod = await import(`${base}/core/export.js`);
+const dom = await import(`${base}/ui/dom.js`);
+const router = await import(`${base}/ui/router.js`);
+const print = await import(`${base}/ui/print.js`);
+const caDict = (await import(`${base}/core/lang/ca.js`)).default;
+
+router.startRouter();
+/** Canvia de ruta i actualitza l'encaminador de manera síncrona. */
+function setRoute(hash) {
+  location.hash = hash;
+  window.dispatchEvent(new HashChangeEvent('hashchange'));
+}
+
+// Contenidors que les vistes esperen trobar.
+['modal-root', 'toast-root', 'print-root'].forEach((id) => {
+  if (!document.getElementById(id)) {
+    const el = document.createElement('div');
+    el.id = id;
+    document.body.appendChild(el);
+  }
+});
+
+check('estat inicial', () => {
+  store.setState(schema.defaultState(), { save: false });
+  return `esquema ${store.getState().schemaVersion}`;
+});
+
+check('dades d’exemple', () => {
+  demo.loadDemoData();
+  const s = store.getState();
+  if (!s.students.length) throw new Error('cap alumne creat');
+  return `${s.students.length} alumnes, ${s.records.length} registres, ${s.appointments.length} cites, ${s.tasks.length} tasques`;
+});
+
+check('dates', () => {
+  if (dates.age('2010-05-01', '2026-04-30') !== 15) throw new Error('edat incorrecta');
+  if (dates.diffDays('2026-01-01', '2026-01-31') !== 30) throw new Error('diferència incorrecta');
+  const w = dates.toISODate(dates.startOfWeek('2026-09-09'));
+  if (w !== '2026-09-07') throw new Error(`dilluns incorrecte: ${w}`);
+  if (dates.schoolYear('2026-09-08') !== '2026-2027') throw new Error('curs escolar incorrecte');
+  return 'edat, rangs i setmana correctes';
+});
+
+check('traduccions ca/es', () => {
+  const missing = [];
+  const walk = (obj, path) => {
+    Object.entries(obj).forEach(([k, v]) => {
+      const p = path ? `${path}.${k}` : k;
+      if (v && typeof v === 'object') walk(v, p);
+      else {
+        i18n.setLang('es');
+        const es = i18n.t(p);
+        i18n.setLang('ca');
+        const ca = i18n.t(p);
+        if (es === p || ca === p) missing.push(p);
+      }
+    });
+  };
+  walk(caDict, '');
+  if (missing.length) throw new Error(`claus sense traduir: ${missing.slice(0, 5).join(', ')}`);
+  return 'totes les claus resolen en català i castellà';
+});
+
+check('selectors', () => {
+  const s = store.getState();
+  const students = sel.allStudents(s);
+  const chain = sel.chainOf(s, students[0].id);
+  const compliance = sel.compliance(s);
+  const search = sel.search(s, students[0].name);
+  if (!chain.length) throw new Error('cadena documental buida');
+  if (!search.length) throw new Error('la cerca no retorna resultats');
+  return `${chain.length} baules, ${sel.alertCount(s)} alertes, ${compliance.contactGap.length} sense contacte`;
+});
+
+check('indicadors', () => {
+  const s = store.getState();
+  const period = dates.schoolYearRange(s.settings.centre.schoolYear);
+  const centre = stats.centreStats(s, period);
+  const groups = stats.groupStats(s, period);
+  const student = stats.studentStats(s, sel.allStudents(s)[0].id, period);
+  if (typeof centre.records !== 'number') throw new Error('indicadors de centre invàlids');
+  if (!groups.rows.length) throw new Error('cap grup');
+  return `centre ${centre.records} registres · ${groups.rows.length} grups · alumne ${student.total} intervencions`;
+});
+
+check('accions i auditoria', () => {
+  const before = store.getState().audit.length;
+  const student = act.save('students', { name: 'Prova', surname: 'Autodiagnòstic', level: '1r ESO', group: '1r ESO A' });
+  const record = act.saveRecord({
+    studentIds: [student.id], at: `${dates.today()}T10:00`, type: 'entrevistaFamilia',
+    content: 'Contingut de prova', participants: ['Tutor'],
+    agreements: [{ id: 'ag_test', text: 'Acord de prova', owner: 'Tutor', due: dates.today(), state: 'pendent' }],
+  });
+  const task = store.getState().tasks.find((k) => k.origin?.refId === 'ag_test');
+  if (!task) throw new Error('l’acord no ha generat cap tasca');
+  act.saveRecord({ ...record, content: 'Contingut modificat' }, { reason: 'correcció' });
+  const updated = store.find('records', record.id);
+  if (!updated.versions.length) throw new Error('no s’ha creat cap versió');
+  act.annul('records', record.id, 'prova');
+  if (!store.find('records', record.id).annulled) throw new Error('l’anul·lació no s’ha aplicat');
+  const after = store.getState().audit.length;
+  if (after <= before) throw new Error('l’auditoria no ha registrat res');
+  return `${after - before} entrades noves, ${updated.versions.length} versió`;
+});
+
+check('exportació i importació', () => {
+  const payload = act.buildExport();
+  schema.validateImport(payload);
+  const preview = act.previewImport(payload);
+  if (preview.add !== 0) throw new Error('la previsualització hauria de trobar 0 altes');
+  const csv = exportMod.toCSV(['a', 'b'], [['1', 'text; amb punt i coma']]);
+  if (!csv.includes('"text; amb punt i coma"')) throw new Error('CSV mal escapat');
+  const ics = exportMod.toICS([{ uid: 'x', start: `${dates.today()}T09:00`, end: `${dates.today()}T10:00`, title: 'Prova' }]);
+  if (!ics.includes('BEGIN:VEVENT')) throw new Error('ICS invàlid');
+  const partial = act.buildExport({ studentId: sel.allStudents(store.getState())[0].id });
+  if (partial.students.length !== 1) throw new Error('exportació parcial incorrecta');
+  return `JSON ${(JSON.stringify(payload).length / 1024).toFixed(0)} kB, CSV i ICS correctes`;
+});
+
+check('escapament HTML', () => {
+  const evil = '<img src=x onerror=alert(1)>';
+  const rendered = dom.toHTML(dom.html`<p>${evil}</p>`);
+  if (rendered.includes('<img')) throw new Error('la interpolació no escapa HTML');
+  return 'les interpolacions s’escapen';
+});
+
+// Renderitzat de totes les vistes.
+const views = ['dashboard', 'agenda', 'students', 'student', 'tasks', 'compliance',
+  'casework', 'services', 'stats', 'audit', 'documents', 'settings'];
+
+const container = document.createElement('div');
+container.style.display = 'none';
+document.body.appendChild(container);
+
+for (const name of views) {
+  const module = await import(`${base}/ui/views/${name}.js`);
+  const state = store.getState();
+  const first = sel.allStudents(state)[0];
+  setRoute(name === 'student' ? `#/alumnat/${first.id}` : '#/inici');
+  const route = router.current();
+  const context = { state, route, settings: state.settings };
+
+  check(`vista ${name}`, () => {
+    const heading = module.title ? module.title(context) : '';
+    container.innerHTML = dom.toHTML(module.render(context));
+    if (module.actions) module.actions(context);
+    if (module.mount) module.mount(container, context);
+    return `${(heading.title || heading || name)} · ${container.innerHTML.length} car.`;
+  });
+
+  if (name === 'student') {
+    for (const tab of ['summary', 'family', 'services', 'records', 'appointments', 'referrals', 'tasks', 'stats', 'chain', 'documents']) {
+      setRoute(`#/alumnat/${first.id}?t=${tab}`);
+      check(`pestanya ${tab}`, () => {
+        container.innerHTML = dom.toHTML(module.render({ ...context, route: router.current() }));
+        return `${container.innerHTML.length} car.`;
+      });
+    }
+  }
+}
+
+// Formularis modals: s'obren, es comprova que tenen contingut i es tanquen.
+const editors = await import(`${base}/ui/editors.js`);
+const modalRoot = document.getElementById('modal-root');
+const student0 = sel.allStudents(store.getState())[0];
+const record0 = sel.recordsOf(store.getState(), student0.id)[0];
+const appointment0 = sel.appointmentsOf(store.getState(), student0.id)[0];
+
+const modals = [
+  ['editStudent (nou)', () => editors.editStudent('')],
+  ['editStudent (existent)', () => editors.editStudent(student0.id)],
+  ['editGuardian', () => editors.editGuardian(student0.id)],
+  ['editRecord (nou)', () => editors.editRecord({ studentId: student0.id })],
+  ['editRecord (existent)', () => editors.editRecord({ recordId: record0?.id })],
+  ['editAppointment (nova)', () => editors.editAppointment({ studentId: student0.id })],
+  ['editAppointment (existent)', () => editors.editAppointment({ appointmentId: appointment0?.id })],
+  ['editTask', () => editors.editTask({ studentId: student0.id })],
+  ['editDemand', () => editors.editDemand({ studentId: student0.id })],
+  ['editReferral', () => editors.editReferral({ studentId: student0.id })],
+  ['editConsent', () => editors.editConsent({ studentId: student0.id })],
+  ['editService', () => editors.editService({})],
+  ['editServiceLink', () => editors.editServiceLink({ studentId: student0.id })],
+  ['editStaff', () => editors.editStaff({})],
+];
+
+for (const [name, open] of modals) {
+  check(`formulari ${name}`, () => {
+    open();
+    const modal = modalRoot.querySelector('.modal');
+    if (!modal) throw new Error('el diàleg no s’ha obert');
+    try {
+      const fields = modal.querySelectorAll('input, select, textarea').length;
+      if (fields < 2) throw new Error(`només ${fields} camps`);
+      const unlabelled = [...modal.querySelectorAll('input:not([type="hidden"]), select, textarea')]
+        .filter((el) => !el.id || !modal.querySelector(`label[for="${CSS.escape(el.id)}"]`))
+        .filter((el) => !el.closest('label') && !el.getAttribute('aria-label') && !el.dataset.k);
+      if (unlabelled.length) {
+        throw new Error(`${unlabelled.length} camps sense etiqueta: ${unlabelled.map((el) => el.outerHTML.slice(0, 90)).join(' || ')}`);
+      }
+      return `${fields} camps · ${modal.innerHTML.length} car.`;
+    } finally {
+      modal.querySelector('[data-modal-close]').click();
+    }
+  });
+}
+
+check('desat des del formulari de registre', () => {
+  editors.editRecord({ studentId: student0.id });
+  const modal = modalRoot.querySelector('.modal');
+  const form = modal.querySelector('form');
+  const content = modal.querySelector('#rec-content');
+  content.value = 'Registre creat des de l’autodiagnòstic amb {{alumne}}.';
+  const before = store.getState().records.length;
+  form.requestSubmit();
+  const after = store.getState().records.length;
+  if (after !== before + 1) throw new Error('el registre no s’ha desat');
+  const saved = store.getState().records[after - 1];
+  if (saved.content.includes('{{alumne}}')) throw new Error('els snippets no s’han expandit');
+  if (modalRoot.querySelector('.modal')) modalRoot.querySelector('[data-modal-close]').click();
+  return `contingut expandit: «${saved.content.slice(0, 46)}…»`;
+});
+
+// Documents imprimibles.
+const first = sel.allStudents(store.getState())[0];
+const period = dates.schoolYearRange(store.getState().settings.centre.schoolYear);
+for (const kind of print.DOCUMENT_KINDS) {
+  check(`document ${kind}`, () => {
+    const record = sel.recordsOf(store.getState(), first.id)[0];
+    const appointment = sel.appointmentsOf(store.getState(), first.id)[0];
+    const area = print.renderDocument(kind, {
+      studentId: first.id, period, recordId: record?.id, appointmentId: appointment?.id,
+    }, { log: false });
+    if (area.innerHTML.length < 200) throw new Error('document buit');
+    return `${area.innerHTML.length} car.`;
+  });
+}
+
+check('rendiment amb volum alt', () => {
+  const t0 = Date.now();
+  store.mutate((draft) => {
+    const base2 = draft.students[0];
+    for (let i = 0; i < 500; i += 1) {
+      draft.students.push({ ...base2, id: `bulk_al_${i}`, name: `Alumne${i}`, surname: `Prova${i}` });
+    }
+    for (let i = 0; i < 5000; i += 1) {
+      draft.records.push({
+        ...schema.newRecord({
+          studentIds: [`bulk_al_${i % 500}`],
+          at: `2026-0${(i % 9) + 1}-1${i % 9}T10:00`,
+          type: 'entrevistaFamilia',
+          content: 'x',
+        }),
+        id: `bulk_rg_${i}`,
+      });
+    }
+  }, null, { save: false });
+  const t1 = Date.now();
+  const bulk = store.getState();
+  if (bulk.students.length < 500 || bulk.records.length < 5000) throw new Error('el volum no s’ha carregat');
+  const period2 = { from: '2026-01-01', to: '2026-12-31' };
+  const first2 = stats.centreStats(bulk, period2);
+  const t2 = Date.now();
+  stats.centreStats(bulk, period2);
+  const t3 = Date.now();
+  const groupsBulk = stats.groupStats(bulk, period2);
+  const t4 = Date.now();
+  if (!first2.records) throw new Error('el càlcul no veu els registres afegits');
+  if (t2 - t1 > 3000) throw new Error(`càlcul massa lent: ${t2 - t1} ms`);
+  return `${bulk.students.length} alumnes i ${bulk.records.length} registres · càrrega ${t1 - t0} ms`
+    + ` · centre ${t2 - t1} ms (${first2.records} registres al període)`
+    + ` · memoritzat ${t3 - t2} ms · grups ${t4 - t3} ms (${groupsBulk.rows.length})`;
+});
+
+const summary = document.getElementById('summary');
+summary.textContent = `RESULTAT: ${pass} correctes, ${fail} errors${errors.length ? ` — ${errors.length} errors globals: ${errors.join(' | ')}` : ''}`;
+summary.dataset.fail = String(fail + errors.length);
+</script>
+</body>
+</html>

@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="ca" data-theme="auto">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Seguiment — eina de seguiment psicopedagògic i d'orientació educativa. Les dades no surten mai del dispositiu.">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#f7f7f5" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#131315" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Seguiment">
+<title>Seguiment</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="assets/icon-192.png">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/layout.css">
+<link rel="stylesheet" href="css/components.css">
+<link rel="stylesheet" href="css/print.css" media="print">
+</head>
+<body>
+<a class="skip-link" href="#main">Salta al contingut principal</a>
+
+<div id="boot" class="boot">
+  <div class="boot__inner">
+    <p class="boot__mark">Seguiment</p>
+    <p class="boot__msg" id="boot-msg">Carregant…</p>
+    <noscript><p class="boot__msg">Aquesta aplicació necessita JavaScript activat.</p></noscript>
+  </div>
+</div>
+
+<div id="app" class="app" hidden>
+  <header class="topbar" role="banner">
+    <button class="iconbtn topbar__menu" data-act="nav:toggle" aria-label="Menú" aria-expanded="false" aria-controls="sidenav">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+    </button>
+    <div class="topbar__title">
+      <h1 id="view-title">Escriptori</h1>
+      <p class="topbar__sub" id="view-sub"></p>
+    </div>
+    <div class="topbar__actions">
+      <button class="iconbtn" data-act="search:open" aria-label="Cerca ràpida" title="Cerca ràpida (Ctrl+K)">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+      </button>
+      <button class="iconbtn" data-act="quick:new" aria-label="Nou" title="Nou (Ctrl+M)">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+      </button>
+      <span class="savestate" id="savestate" role="status" aria-live="polite"></span>
+    </div>
+  </header>
+
+  <nav class="sidenav" id="sidenav" aria-label="Navegació principal"></nav>
+  <div class="scrim" data-act="nav:close" hidden></div>
+
+  <main class="main" id="main" tabindex="-1">
+    <div id="view" class="view"></div>
+  </main>
+
+  <nav class="tabbar" id="tabbar" aria-label="Navegació"></nav>
+</div>
+
+<div id="modal-root"></div>
+<div id="toast-root" class="toasts" role="status" aria-live="polite"></div>
+<div id="print-root" class="printarea" aria-hidden="true"></div>
+
+<script type="module" src="js/main.js"></script>
+<script nomodule>document.getElementById('boot-msg').textContent='El navegador no admet mòduls JavaScript. Actualitzeu-lo.';</script>
+</body>
+</html>

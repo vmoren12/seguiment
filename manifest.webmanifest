@@ -1,0 +1,26 @@
+{
+  "name": "Seguiment — orientació educativa",
+  "short_name": "Seguiment",
+  "description": "Seguiment psicopedagògic i d'orientació educativa. Les dades no surten mai del dispositiu.",
+  "id": "/seguiment/",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f7f7f5",
+  "theme_color": "#f7f7f5",
+  "lang": "ca",
+  "dir": "ltr",
+  "categories": ["education", "productivity"],
+  "icons": [
+    { "src": "assets/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "assets/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "assets/icon-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "assets/icon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ],
+  "shortcuts": [
+    { "name": "Agenda", "url": "./index.html#/agenda", "description": "Cites i coordinacions" },
+    { "name": "Alumnat", "url": "./index.html#/alumnat", "description": "Llistat i fitxes" },
+    { "name": "Compliment", "url": "./index.html#/compliment", "description": "Terminis i alertes" }
+  ]
+}

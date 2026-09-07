@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="ca">
+<head>
+<meta charset="utf-8">
+<title>Seguiment — carrega dades d'exemple</title>
+<style>body{font:14px system-ui;margin:24px;max-width:52ch}</style>
+</head>
+<body>
+<h1>Dades d'exemple</h1>
+<p id="msg">Preparant…</p>
+<p><a href="../index.html">Obre l'aplicació</a></p>
+
+<script type="module">
+// Escriu un magatzem d'exemple a localStorage i obre l'aplicació.
+// Eina de desenvolupament: no forma part de l'aplicació.
+const store = await import('../js/core/store.js');
+const schema = await import('../js/domain/schema.js');
+const demo = await import('../js/domain/demo.js');
+
+store.setState(schema.defaultState(), { save: false });
+demo.loadDemoData();
+const state = store.getState();
+state.settings.centre.name = 'Institut Escola Exemple';
+state.settings.centre.code = '08099999';
+state.settings.centre.address = 'Carrer de la Mostra, 1 — 08000 Vila';
+state.settings.centre.professional = 'Orientació educativa';
+localStorage.setItem(schema.STORAGE_KEY, JSON.stringify(state));
+
+document.getElementById('msg').textContent =
+  `${state.students.length} alumnes, ${state.records.length} registres, ${state.appointments.length} cites i ${state.audit.length} entrades d'auditoria.`;
+if (new URLSearchParams(location.search).get('go') === '1') location.replace('../index.html');
+</script>
+</body>
+</html>

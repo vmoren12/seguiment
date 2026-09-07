@@ -1,0 +1,22 @@
+# Sistema operatiu
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editors
+.vscode/
+.idea/
+*.swp
+
+# Dependencies i artefactes (el projecte no en te, pero evitem sorpreses)
+node_modules/
+dist/
+*.log
+
+# Exportacions de dades: mai s'han de pujar al repositori
+*.local.json
+seguiment-*.json
+traspas-*.json
+
+# Especificacio original de treball (fitxer local)
+prmpt.md

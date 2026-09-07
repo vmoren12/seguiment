@@ -1,0 +1,63 @@
+/* ==========================================================================
+   print.css - sortida imprimible neta, sense elements d'interficie
+   S'activa nomes en imprimir. El contingut generat viu a #print-root.
+   ========================================================================== */
+
+@page { size: A4; margin: 16mm 14mm 18mm; }
+
+@media print {
+  :root {
+    --bg: #fff; --surface: #fff; --surface-2: #fff; --surface-3: #fff;
+    --text: #000; --text-2: #333; --text-3: #555;
+    --line: #999; --line-soft: #ccc; --accent: #000; --accent-weak: #eee;
+  }
+
+  html, body { background: #fff !important; color: #000 !important; }
+
+  .topbar, .sidenav, .tabbar, .scrim, .toasts, .skip-link, .boot,
+  .modal, #modal-root, .app { display: none !important; }
+
+  .printarea { display: block !important; }
+
+  .doc { font-size: 10.5pt; line-height: 1.4; color: #000; }
+  .doc h1 { font-size: 17pt; margin: 0 0 4pt; }
+  .doc h2 { font-size: 13pt; margin: 14pt 0 4pt; padding-bottom: 2pt; border-bottom: .5pt solid #999; }
+  .doc h3 { font-size: 11pt; margin: 9pt 0 3pt; }
+  .doc p, .doc li { orphans: 3; widows: 3; }
+
+  .doc__cover { text-align: left; padding-bottom: 10mm; border-bottom: 1pt solid #000; margin-bottom: 8mm; }
+  .doc__cover .doc__kicker { font-size: 9pt; letter-spacing: .14em; text-transform: uppercase; color: #444; }
+  .doc__cover h1 { font-size: 24pt; margin: 6pt 0 10pt; }
+  .doc__meta { font-size: 9.5pt; color: #333; }
+  .doc__meta div { margin-bottom: 2pt; }
+
+  .doc__section { break-inside: auto; }
+  .doc__pagebreak { break-before: page; }
+  .doc__avoid { break-inside: avoid; }
+
+  .doc table { width: 100%; border-collapse: collapse; font-size: 9.5pt; margin: 4pt 0 8pt; }
+  .doc th, .doc td { border: .5pt solid #999; padding: 3pt 4pt; text-align: left; vertical-align: top; }
+  .doc th { background: #eee; font-weight: 600; }
+  .doc thead { display: table-header-group; }
+  .doc tr { break-inside: avoid; }
+
+  .doc__dl { display: grid; grid-template-columns: 42mm 1fr; gap: 1pt 4mm; font-size: 10pt; margin: 0 0 6pt; }
+  .doc__dl dt { color: #444; }
+  .doc__dl dd { margin: 0; }
+
+  .doc__note { border-left: 2pt solid #999; padding-left: 4mm; font-size: 9.5pt; color: #333; margin: 4pt 0; }
+  .doc__foot { margin-top: 10mm; padding-top: 3mm; border-top: .5pt solid #999; font-size: 8.5pt; color: #444; }
+  .doc__toc { font-size: 10.5pt; }
+  .doc__toc li { margin-bottom: 2pt; }
+
+  .doc .chart { max-width: 150mm; }
+  .doc .chart text { fill: #333; }
+  .doc .chart .chart__bar, .doc .chart .chart__dot { fill: #444; }
+  .doc .chart .chart__line { stroke: #444; }
+  .doc .chart .chart__area { fill: #888; opacity: .18; }
+  .doc .chart .chart__axis { stroke: #666; }
+  .doc .chart .chart__grid { stroke: #ccc; }
+
+  .doc .chip, .doc .tag { border: .5pt solid #999 !important; background: none !important; color: #000 !important; padding: 0 2pt; }
+  a { color: #000; text-decoration: none; }
+}

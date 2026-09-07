@@ -1,0 +1,132 @@
+/* ==========================================================================
+   layout.css — estructura de l'aplicació (barra superior, navegació, contingut)
+   Mobile first: navegació inferior en pantalles petites, lateral en escriptori.
+   ========================================================================== */
+
+.app { min-height: 100dvh; display: flex; flex-direction: column; }
+
+/* --- Barra superior ------------------------------------------------------ */
+.topbar {
+  position: sticky; top: 0; z-index: 40;
+  display: flex; align-items: center; gap: var(--s2);
+  height: var(--topbar-h);
+  padding: 0 var(--s3);
+  padding-top: env(safe-area-inset-top);
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  backdrop-filter: saturate(1.4) blur(8px);
+  border-bottom: var(--bw) solid var(--line);
+}
+.topbar__title { min-width: 0; flex: 1; }
+.topbar__title h1 { font-size: var(--fs-lg); }
+.topbar__sub { margin: 0; font-size: var(--fs-xs); color: var(--text-3); }
+.topbar__actions { display: flex; align-items: center; gap: var(--s1); }
+
+.savestate {
+  font-size: var(--fs-xs); color: var(--text-3); min-width: 0;
+  padding-left: var(--s1); white-space: nowrap;
+}
+.savestate[data-state="saving"] { color: var(--text-2); }
+.savestate[data-state="error"] { color: var(--danger); }
+
+/* --- Navegació lateral --------------------------------------------------- */
+.sidenav {
+  position: fixed; z-index: 60; inset: 0 auto 0 0;
+  width: min(84vw, var(--nav-w));
+  background: var(--surface);
+  border-right: var(--bw) solid var(--line);
+  padding: var(--s3) var(--s2) calc(var(--s6) + env(safe-area-inset-bottom));
+  overflow-y: auto;
+  transform: translateX(-102%);
+  transition: transform var(--dur) ease;
+  display: flex; flex-direction: column; gap: var(--s1);
+}
+.sidenav[data-open="true"] { transform: none; }
+
+.sidenav__brand {
+  display: flex; align-items: baseline; gap: var(--s2);
+  padding: var(--s2) var(--s3) var(--s4);
+}
+.sidenav__brand b { font-size: var(--fs-lg); letter-spacing: -.02em; }
+.sidenav__brand span { font-size: var(--fs-xs); color: var(--text-3); }
+
+.navitem {
+  display: flex; align-items: center; gap: var(--s3);
+  min-height: 44px; padding: var(--s2) var(--s3);
+  border-radius: var(--r2); border: 0; background: none;
+  color: var(--text-2); font: inherit; font-size: var(--fs-md);
+  text-align: left; text-decoration: none; cursor: pointer; width: 100%;
+}
+.navitem svg { width: 18px; height: 18px; flex: none; }
+.navitem:hover { background: var(--surface-2); color: var(--text); }
+.navitem[aria-current="page"] { background: var(--accent-weak); color: var(--accent); font-weight: 600; }
+.navitem__badge {
+  margin-left: auto; font-size: var(--fs-xs); font-weight: 600;
+  background: var(--surface-3); color: var(--text-2);
+  border-radius: 999px; padding: 1px var(--s2); min-width: 20px; text-align: center;
+}
+.navitem[data-alert="true"] .navitem__badge { background: var(--danger-bg); color: var(--danger); }
+.navsep { height: var(--bw); background: var(--line-soft); margin: var(--s2) var(--s3); }
+.sidenav__foot { margin-top: auto; padding: var(--s3); font-size: var(--fs-xs); color: var(--text-3); }
+
+.scrim { position: fixed; inset: 0; z-index: 50; background: rgba(0,0,0,.35); border: 0; }
+
+/* --- Contingut ----------------------------------------------------------- */
+.main { flex: 1; min-width: 0; }
+.view {
+  padding: var(--s4) var(--s3);
+  padding-bottom: calc(var(--tabbar-h) + var(--s7) + env(safe-area-inset-bottom));
+  max-width: 1180px; margin: 0 auto;
+}
+.view:focus { outline: none; }
+
+/* --- Navegació inferior (mòbil) ------------------------------------------ */
+.tabbar {
+  position: fixed; z-index: 45; left: 0; right: 0; bottom: 0;
+  display: grid; grid-auto-flow: column; grid-auto-columns: 1fr;
+  background: color-mix(in srgb, var(--surface) 94%, transparent);
+  backdrop-filter: blur(8px);
+  border-top: var(--bw) solid var(--line);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.tabitem {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 2px; min-height: var(--tabbar-h); padding: var(--s1);
+  border: 0; background: none; color: var(--text-3);
+  font: inherit; font-size: 10.5px; cursor: pointer; position: relative;
+}
+.tabitem svg { width: 20px; height: 20px; }
+.tabitem[aria-current="page"] { color: var(--accent); }
+.tabitem[data-alert="true"]::after {
+  content: ""; position: absolute; top: 8px; right: calc(50% - 16px);
+  width: 6px; height: 6px; border-radius: 50%; background: var(--danger);
+}
+
+/* --- Escriptori ---------------------------------------------------------- */
+@media (min-width: 900px) {
+  .app { display: grid; grid-template-columns: var(--nav-w) 1fr; grid-template-rows: auto 1fr; }
+  .topbar { grid-column: 2; padding: 0 var(--s6); }
+  .sidenav { position: sticky; grid-row: 1 / 3; grid-column: 1; transform: none; height: 100dvh; top: 0; }
+  .main { grid-column: 2; }
+  .view { padding: var(--s6); padding-bottom: var(--s9); }
+  .tabbar, .topbar__menu, .scrim { display: none !important; }
+}
+
+/* --- Graelles ------------------------------------------------------------ */
+.grid { display: grid; gap: var(--s3); }
+.grid--2 { grid-template-columns: 1fr; }
+.grid--3 { grid-template-columns: 1fr; }
+.grid--auto { grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); }
+@media (min-width: 700px) {
+  .grid--2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .grid--3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+.stack { display: flex; flex-direction: column; gap: var(--s3); }
+.stack--sm { gap: var(--s2); }
+.row { display: flex; align-items: center; gap: var(--s2); flex-wrap: wrap; }
+.row--between { justify-content: space-between; }
+.row--tight { gap: var(--s1); }
+.spacer { flex: 1 1 auto; }
+
+.page-head { display: flex; align-items: flex-start; gap: var(--s3); flex-wrap: wrap; margin-bottom: var(--s4); }
+.page-head h2 { font-size: var(--fs-xl); }
+.page-head .row { margin-left: auto; }
