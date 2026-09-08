@@ -20,7 +20,7 @@ function requestPassword(envelope) {
   return new Promise((resolve, reject) => {
     boot.innerHTML = `
       <form class="boot__inner" id="unlock-form" style="width:min(92vw,320px)">
-        <p class="boot__mark">Seguiment</p>
+        <p class="boot__mark">Rumb</p>
         <p class="boot__msg" id="unlock-msg">Introduïu la contrasenya per obrir les dades.</p>
         <input class="input" type="password" id="unlock-pw" autocomplete="current-password" required autofocus
           style="margin-top:12px" aria-label="Contrasenya">

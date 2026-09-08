@@ -41,6 +41,16 @@ export function fullName(student, presentation = false) {
   return presentation ? initials(full) : full;
 }
 
+/** Tutors/es del grup en una sola línia. */
+export function tutorLabel(student) {
+  return (student?.tutors || []).filter(Boolean).join(', ');
+}
+
+/** Tots els tutors/es d'un alumne/a, inclòs el de la tutoria individual. */
+export function tutorsOf(student) {
+  return [...(student?.tutors || []), student?.tutorIndividual].filter(Boolean);
+}
+
 /** Nom en format llistat: «Cognoms, Nom». */
 export function listName(student, presentation = false) {
   if (!student) return '';
@@ -68,7 +78,7 @@ export function filterStudents(state, filters = {}) {
     if (group && s.group !== group) return false;
     if (nese && s.nese?.category !== nese) return false;
     if (status && s.status?.value !== status) return false;
-    if (tutor && s.tutorName !== tutor) return false;
+    if (tutor && !tutorsOf(s).includes(tutor)) return false;
     if (linkedByService && !linkedByService.has(s.id)) return false;
     if (contactGap) {
       const last = lastContactDate(state, s.id);
@@ -76,7 +86,7 @@ export function filterStudents(state, filters = {}) {
       if (gap < Number(contactGap)) return false;
     }
     if (query) {
-      const hay = `${s.name} ${s.surname} ${s.level} ${s.group} ${s.tutorName} ${(s.tags || []).join(' ')}`;
+      const hay = `${s.name} ${s.surname} ${s.level} ${s.group} ${tutorsOf(s).join(' ')} ${(s.tags || []).join(' ')}`;
       if (!matches(hay, query)) return false;
     }
     return true;
@@ -99,7 +109,7 @@ export function groups(state) {
 export function tutors(state) {
   return unique([
     ...state.staff.filter((p) => !p.annulled).map((p) => p.name),
-    ...state.students.map((s) => s.tutorName),
+    ...state.students.flatMap((s) => tutorsOf(s)),
   ]);
 }
 
@@ -238,7 +248,7 @@ export function pool(state, kind) {
         ...state.records.flatMap((r) => r.participants || []),
         ...state.appointments.flatMap((a) => a.attendees || []),
         ...state.staff.filter((p) => !p.annulled).map((p) => p.name),
-        ...state.students.map((s) => s.tutorName),
+        ...state.students.flatMap((s) => tutorsOf(s)),
       ]);
     case 'diagnoses':
       return unique(state.students.flatMap((s) => (s.health?.diagnoses || []).map((d) => d.text)));
@@ -500,7 +510,7 @@ export function search(state, query, presentation = false) {
   const out = [];
 
   for (const s of allStudents(state)) {
-    if (matches(`${s.name} ${s.surname} ${s.group} ${s.tutorName}`, query)) {
+    if (matches(`${s.name} ${s.surname} ${s.group} ${tutorsOf(s).join(' ')}`, query)) {
       out.push({ kind: 'student', id: s.id, title: listName(s, presentation), meta: [s.level, s.group].filter(Boolean).join(' · ') });
     }
     if (out.length > 40) break;

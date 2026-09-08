@@ -5,8 +5,14 @@
 import { uid } from '../core/util.js';
 import { today, schoolYear, nowStamp } from '../core/dates.js';
 
-export const APP_VERSION = '1.1.0';
-export const SCHEMA_VERSION = 1;
+export const APP_VERSION = '1.2.0';
+
+/** Autoria i procedència de l'aplicació, per al peu i la secció «Quant a». */
+export const APP_AUTHOR = 'Víctor Moreno de la Torre';
+export const APP_YEAR = 2026;
+export const APP_LICENSE = 'MIT';
+export const APP_REPO = 'https://github.com/vmoren12/seguiment';
+export const SCHEMA_VERSION = 2;
 export const STORAGE_KEY = 'seguiment.v1';
 
 /** Col·leccions d'entitats presents a l'estat (ordre d'importació). */
@@ -148,7 +154,9 @@ export function newStudent(patch = {}) {
   return {
     ...base('al'),
     name: '', surname: '', birth: '', gender: 'noConsta',
-    level: '', group: '', tutorId: '', tutorName: '',
+    level: '', group: '',
+    tutors: [],            // tutors/es del grup: en poden ser més d'un
+    tutorIndividual: '',   // tutor/a de la tutoria individualitzada
     originCentre: '', enrolled: today(),
     academic: { repeats: 0, pendingSubjects: '', attendance: '' },
     nese: {
@@ -301,7 +309,18 @@ export function newAgreement(patch = {}) {
  * Els passos futurs s'afegeixen a MIGRATIONS amb la versió de destinació.
  */
 const MIGRATIONS = {
-  // 2: (state) => { ...; state.schemaVersion = 2; return state; },
+  // Un alumne/a pot tenir més d'un tutor/a de grup i, a més, un tutor/a
+  // individual. El camp únic `tutorName` passa a ser el primer de la llista.
+  2: (state) => {
+    (state.students || []).forEach((s) => {
+      if (!Array.isArray(s.tutors)) s.tutors = s.tutorName ? [s.tutorName] : [];
+      if (typeof s.tutorIndividual !== 'string') s.tutorIndividual = '';
+      delete s.tutorName;
+      delete s.tutorId;
+    });
+    state.schemaVersion = 2;
+    return state;
+  },
 };
 
 /** Aplica les migracions pendents i completa els camps que faltin. */

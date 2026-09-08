@@ -12,6 +12,7 @@ import * as sel from '../domain/selectors.js';
 import * as router from './router.js';
 import { editStudent, editRecord, editAppointment, editDemand, editTask } from './editors.js';
 import { today, daysSince, toISOLocal, minutesOfDay } from '../core/dates.js';
+import { APP_VERSION, APP_AUTHOR, APP_YEAR, APP_LICENSE, APP_REPO } from '../domain/schema.js';
 
 import * as viewDashboard from './views/dashboard.js';
 import * as viewAgenda from './views/agenda.js';
@@ -82,6 +83,14 @@ function renderNav(state, route) {
     </div>
     ${navItems(state, route)}
     <div class="sidenav__foot">
+      <p class="sidenav__author">
+        <b>${APP_AUTHOR}</b>
+        <span>${t('app.authorRole')}</span>
+      </p>
+      <p class="sidenav__legal">
+        © ${APP_YEAR} · ${t('app.code')}: <a href="${APP_REPO}/blob/main/LICENSE" target="_blank" rel="noopener">${APP_LICENSE}</a>
+        · <a href="${APP_REPO}" target="_blank" rel="noopener">v${APP_VERSION}</a>
+      </p>
       <p>${t('app.privacy')}</p>
     </div>
   `);

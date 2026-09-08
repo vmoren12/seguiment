@@ -1,6 +1,6 @@
 {
-  "name": "Seguiment — orientació educativa",
-  "short_name": "Seguiment",
+  "name": "Rumb — orientació educativa",
+  "short_name": "Rumb",
   "description": "Seguiment psicopedagògic i d'orientació educativa. Les dades no surten mai del dispositiu.",
   "id": "/seguiment/",
   "start_url": "./index.html",

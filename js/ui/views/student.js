@@ -29,7 +29,7 @@ export function title({ state, route }) {
   if (!s) return { title: t('students.title'), subtitle: '' };
   return {
     title: sel.fullName(s, state.settings.presentation),
-    subtitle: [s.level, s.group, s.tutorName].filter(Boolean).join(' · '),
+    subtitle: [s.level, s.group, sel.tutorLabel(s)].filter(Boolean).join(' · '),
   };
 }
 
@@ -98,7 +98,8 @@ function summaryTab(state, s) {
       <dl class="deflist">
         <div><dt>${t('students.fields.birth')}</dt><dd>${s.birth ? `${fmtDate(s.birth)} (${age(s.birth)} anys)` : '—'}</dd></div>
         <div><dt>${t('students.fields.gender')}</dt><dd>${tEnum('gender', s.gender)}</dd></div>
-        <div><dt>${t('students.fields.tutor')}</dt><dd>${s.tutorName || '—'}</dd></div>
+        <div><dt>${t('students.fields.tutors')}</dt><dd>${sel.tutorLabel(s) || '—'}</dd></div>
+        <div><dt>${t('students.fields.tutorIndividual')}</dt><dd>${s.tutorIndividual || '—'}</dd></div>
         <div><dt>${t('students.fields.enrolled')}</dt><dd>${s.enrolled ? fmtDate(s.enrolled) : '—'}</dd></div>
         <div><dt>${t('students.fields.originCentre')}</dt><dd>${s.originCentre || '—'}</dd></div>
         <div><dt>${t('students.fields.repeats')}</dt><dd>${s.academic?.repeats ?? 0}</dd></div>

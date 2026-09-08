@@ -46,11 +46,14 @@ export function barList(items, { max, unit = '' } = {}) {
  * Gràfic de columnes per a sèries temporals.
  * @param {Array<{label:string, value:number}>} points
  */
-export function columnChart(points, { height = 150, title = '' } = {}) {
+export function columnChart(points, { height = 170, title = '' } = {}) {
   if (!points.length) return html`<p class="muted small">${t('stats.noData')}</p>`;
 
-  const width = Math.max(280, points.length * 46);
-  const pad = { top: 16, right: 8, bottom: 24, left: 30 };
+  // L'SVG es dibuixa a mida real i només s'encongeix si no hi cap (max-width
+  // al full d'estil). Amb amplada al 100 % i poques columnes, el navegador
+  // ampliava el dibuix i les xifres dels eixos sortien enormes.
+  const width = Math.max(520, points.length * 46);
+  const pad = { top: 18, right: 10, bottom: 26, left: 34 };
   const innerW = width - pad.left - pad.right;
   const innerH = height - pad.top - pad.bottom;
   const max = Math.max(...points.map((p) => p.value), 1);
@@ -59,12 +62,13 @@ export function columnChart(points, { height = 150, title = '' } = {}) {
 
   const ticks = [0, Math.round(max / 2), max].filter((v, i, a) => a.indexOf(v) === i);
 
-  return html`<svg class="chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="${title || t('common.evolution')}" preserveAspectRatio="xMidYMid meet">
+  return html`<svg class="chart" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}"
+    role="img" aria-label="${title || t('common.evolution')}" preserveAspectRatio="xMidYMid meet">
     ${ticks.map((v) => {
     const y = pad.top + innerH - (v / max) * innerH;
     return html`<g>
         <line class="chart__grid" x1="${pad.left}" y1="${y}" x2="${width - pad.right}" y2="${y}"/>
-        <text x="${pad.left - 5}" y="${y + 3}" text-anchor="end">${v}</text>
+        <text class="chart__tick" x="${pad.left - 6}" y="${y + 4}" text-anchor="end">${v}</text>
       </g>`;
   })}
     ${points.map((p, index) => {
@@ -74,7 +78,7 @@ export function columnChart(points, { height = 150, title = '' } = {}) {
     return html`<g>
         <rect class="chart__bar" x="${x}" y="${y}" width="${barW}" height="${Math.max(h, p.value > 0 ? 2 : 0)}" rx="2"><title>${p.label}: ${p.value}</title></rect>
         ${p.value > 0 ? html`<text class="chart__val" x="${x + barW / 2}" y="${y - 4}" text-anchor="middle">${p.value}</text>` : ''}
-        <text x="${x + barW / 2}" y="${height - 8}" text-anchor="middle">${p.label}</text>
+        <text class="chart__tick" x="${x + barW / 2}" y="${height - 8}" text-anchor="middle">${p.label}</text>
       </g>`;
   })}
     <line class="chart__axis" x1="${pad.left}" y1="${pad.top + innerH}" x2="${width - pad.right}" y2="${pad.top + innerH}"/>
@@ -84,11 +88,11 @@ export function columnChart(points, { height = 150, title = '' } = {}) {
 /**
  * Gràfic de línia amb àrea per a evolucions llargues.
  */
-export function lineChart(points, { height = 150, title = '' } = {}) {
+export function lineChart(points, { height = 170, title = '' } = {}) {
   if (points.length < 2) return columnChart(points, { height, title });
 
-  const width = Math.max(300, points.length * 40);
-  const pad = { top: 16, right: 10, bottom: 24, left: 30 };
+  const width = Math.max(520, points.length * 40);
+  const pad = { top: 18, right: 12, bottom: 26, left: 34 };
   const innerW = width - pad.left - pad.right;
   const innerH = height - pad.top - pad.bottom;
   const max = Math.max(...points.map((p) => p.value), 1);
@@ -103,19 +107,20 @@ export function lineChart(points, { height = 150, title = '' } = {}) {
   const area = `${line} L${coords[coords.length - 1].x.toFixed(1)},${pad.top + innerH} L${coords[0].x.toFixed(1)},${pad.top + innerH} Z`;
   const labelEvery = Math.ceil(points.length / 8);
 
-  return html`<svg class="chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="${title || t('common.evolution')}" preserveAspectRatio="xMidYMid meet">
+  return html`<svg class="chart" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}"
+    role="img" aria-label="${title || t('common.evolution')}" preserveAspectRatio="xMidYMid meet">
     ${[0, max].map((v) => {
     const y = pad.top + innerH - (v / max) * innerH;
     return html`<g>
         <line class="chart__grid" x1="${pad.left}" y1="${y}" x2="${width - pad.right}" y2="${y}"/>
-        <text x="${pad.left - 5}" y="${y + 3}" text-anchor="end">${v}</text>
+        <text class="chart__tick" x="${pad.left - 6}" y="${y + 4}" text-anchor="end">${v}</text>
       </g>`;
   })}
     <path class="chart__area" d="${raw(area)}"/>
     <path class="chart__line" d="${raw(line)}"/>
     ${coords.map((c, i) => html`<g>
       <circle class="chart__dot" cx="${c.x}" cy="${c.y}" r="3"><title>${c.p.label}: ${c.p.value}</title></circle>
-      ${i % labelEvery === 0 ? html`<text x="${c.x}" y="${height - 8}" text-anchor="middle">${c.p.label}</text>` : ''}
+      ${i % labelEvery === 0 ? html`<text class="chart__tick" x="${c.x}" y="${height - 8}" text-anchor="middle">${c.p.label}</text>` : ''}
     </g>`)}
     <line class="chart__axis" x1="${pad.left}" y1="${pad.top + innerH}" x2="${width - pad.right}" y2="${pad.top + innerH}"/>
   </svg>`;
@@ -129,7 +134,7 @@ export function stackedBar(segments, { height = 18 } = {}) {
   const total = segments.reduce((acc, s) => acc + s.value, 0);
   if (!total) return html`<p class="muted small">${t('stats.noData')}</p>`;
   let x = 0;
-  return html`<svg class="chart" viewBox="0 0 100 ${height}" preserveAspectRatio="none" role="img" aria-label="${segments.map((s) => `${s.label}: ${s.value}`).join(', ')}" style="height:${height}px">
+  return html`<svg class="chart" viewBox="0 0 100 ${height}" preserveAspectRatio="none" role="img" aria-label="${segments.map((s) => `${s.label}: ${s.value}`).join(', ')}" style="width:100%;height:${height}px">
     ${segments.map((s) => {
     const w = (s.value / total) * 100;
     const rect = html`<rect x="${x}" y="0" width="${w}" height="${height}" fill="${s.color || 'var(--accent)'}" opacity="${s.opacity ?? 1}"><title>${s.label}: ${s.value}</title></rect>`;

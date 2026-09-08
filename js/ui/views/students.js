@@ -104,7 +104,10 @@ export function render({ state }) {
               </td>
               <td data-th="${t('common.level')}">${s.level}</td>
               <td data-th="${t('common.group')}">${s.group}</td>
-              <td data-th="${t('common.tutor')}">${s.tutorName}</td>
+              <td data-th="${t('common.tutor')}">
+                ${sel.tutorLabel(s)}
+                ${s.tutorIndividual ? html`<span class="muted tiny" style="display:block">${t('students.fields.tutorIndividual')}: ${s.tutorIndividual}</span>` : ''}
+              </td>
               <td data-th="NESE">${s.nese?.category && s.nese.category !== 'cap'
     ? html`<span class="chip chip--accent">${tEnum('nese', s.nese.category)}</span>` : ''}</td>
               <td data-th="PI">${s.nese?.pi?.has
@@ -147,9 +150,10 @@ export function actions({ state }) {
     'students:csv': () => {
       const list = sel.filterStudents(state, filtersOf(current()));
       exportCSV(
-        ['Cognoms', 'Nom', 'Data naixement', 'Edat', 'Nivell', 'Grup', 'Tutor/a', 'NESE', 'PI', 'Revisió PI', 'Estat', 'Últim contacte'],
+        ['Cognoms', 'Nom', 'Data naixement', 'Edat', 'Nivell', 'Grup', 'Tutors/es', 'Tutor/a individual', 'NESE', 'PI', 'Revisió PI', 'Estat', 'Últim contacte'],
         list.map((s) => [
-          s.surname, s.name, s.birth, age(s.birth) ?? '', s.level, s.group, s.tutorName,
+          s.surname, s.name, s.birth, age(s.birth) ?? '', s.level, s.group,
+          sel.tutorLabel(s), s.tutorIndividual || '',
           tEnum('nese', s.nese?.category), s.nese?.pi?.has ? 'Sí' : 'No', s.nese?.pi?.review || '',
           tEnum('fileState', s.status?.value), sel.lastContactDate(state, s.id) || '',
         ]),

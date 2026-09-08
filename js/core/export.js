@@ -75,11 +75,11 @@ function fold(line) {
  * Construeix un calendari ICS a partir d'una llista d'esdeveniments
  * { uid, start, end, title, description, location, status }.
  */
-export function toICS(events, calendarName = 'Seguiment') {
+export function toICS(events, calendarName = 'Rumb') {
   const lines = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
-    'PRODID:-//Seguiment//Orientacio educativa//CA',
+    'PRODID:-//Rumb//Orientacio educativa//CA',
     'CALSCALE:GREGORIAN',
     'METHOD:PUBLISH',
     `X-WR-CALNAME:${icsEscape(calendarName)}`,

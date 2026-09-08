@@ -2,9 +2,11 @@
 export default {
   locale: 'es-ES',
   app: {
-    name: 'Seguiment',
+    name: 'Rumb',
     tagline: 'Seguimiento psicopedagógico y orientación educativa',
     privacy: 'Los datos nunca salen del dispositivo.',
+    authorRole: 'Psicólogo y Orientador Educativo',
+    code: 'Código',
   },
   nav: {
     dashboard: 'Escritorio',
@@ -133,6 +135,7 @@ export default {
     fields: {
       name: 'Nombre', surname: 'Apellidos', birth: 'Fecha de nacimiento', age: 'Edad',
       level: 'Nivel', group: 'Grupo', tutor: 'Tutor/a',
+      tutors: 'Tutores/as del grupo', tutorIndividual: 'Tutor/a individual',
       originCentre: 'Centro de procedencia', enrolled: 'Fecha de alta del expediente',
       gender: 'Género', repeats: 'Repeticiones', pendingSubjects: 'Materias pendientes',
       attendance: 'Asistencia (%)', status: 'Estado del expediente',
@@ -164,6 +167,7 @@ export default {
     addMeasure: 'Añadir una medida', measureText: 'Medida o apoyo',
     measureType: 'Tipo', measureNorm: 'Referencia normativa',
     addDiagnosis: 'Añadir un diagnóstico', diagnosisPro: 'Profesional que lo emite',
+    tutorsHint: 'Separad los tutores/as con comas. Un grupo puede tener cotutoría.',
   },
   records: {
     title: 'Registros de seguimiento',
@@ -336,6 +340,13 @@ export default {
     index: 'Índice',
     noStudent: 'Elegid un alumno/a.',
     copyText: 'Copiar como texto',
+    pickSections: 'Apartados a incluir',
+    sectionsHint: 'Desmarcad lo que no queráis que salga en el documento.',
+    allSections: 'Todos', noSections: 'Ninguno',
+    sections: {
+      letter: 'Texto de la convocatoria',
+      summary: 'Resumen general',
+    },
   },
   settings: {
     title: 'Configuración',

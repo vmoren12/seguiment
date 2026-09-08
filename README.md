@@ -1,4 +1,10 @@
-# Seguiment
+# Rumb
+
+### ▶ [Obre l'aplicació](https://vmoren12.github.io/seguiment/)
+
+No cal instal·lar res: s'obre al navegador i funciona també sense connexió. Des del mateix navegador es pot instal·lar com a aplicació d'escriptori o de mòbil.
+
+---
 
 Aplicació web per al **seguiment psicopedagògic i l'orientació educativa** a centres de primària i secundària. Pensada per a orientadors, tutors i equips docents que necessiten registrar actuacions amb rapidesa i, alhora, poder justificar-les davant d'una revisió del Departament d'Educació.
 
@@ -126,9 +132,11 @@ El centre educatiu és el responsable del tractament als efectes del RGPD (UE) 2
 
 ---
 
-## Llicència
+## Autoria i llicència
 
-MIT. Vegeu [LICENSE](LICENSE).
+**Víctor Moreno de la Torre** — Psicòleg i Orientador Educatiu.
+
+Codi sota llicència MIT. Vegeu [LICENSE](LICENSE).
 
 ---
 

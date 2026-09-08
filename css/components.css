@@ -330,9 +330,15 @@
 .calslot { position: absolute; inset: 0; z-index: 1; background: none; border: 0; cursor: cell; padding: 0; }
 
 /* --- Grafics SVG --------------------------------------------------------- */
-.chart { width: 100%; height: auto; display: block; overflow: visible; }
-.chart text { font-family: var(--font); font-size: 10px; fill: var(--text-3); }
-.chart .chart__val { fill: var(--text-2); font-size: 10px; font-variant-numeric: tabular-nums; }
+/* Mida intrinseca: el dibuix s'encongeix si no hi cap, pero mai s'amplia.
+   Escalant-lo cap amunt, les xifres dels eixos sortien desproporcionades.   */
+.chart { max-width: 100%; height: auto; display: block; overflow: visible; }
+.chart text {
+  font-family: var(--font); font-size: 11px; fill: var(--text-3);
+  font-variant-numeric: tabular-nums;
+}
+.chart .chart__tick { fill: var(--text-3); }
+.chart .chart__val { fill: var(--text-2); font-size: 10.5px; font-weight: 500; }
 .chart .chart__bar { fill: var(--accent); }
 .chart .chart__axis { stroke: var(--line); stroke-width: 1; }
 .chart .chart__grid { stroke: var(--line-soft); stroke-width: 1; }

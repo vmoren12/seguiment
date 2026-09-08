@@ -3,9 +3,11 @@
 export default {
   locale: 'ca-ES',
   app: {
-    name: 'Seguiment',
+    name: 'Rumb',
     tagline: 'Seguiment psicopedagògic i orientació educativa',
     privacy: 'Les dades no surten mai del dispositiu.',
+    authorRole: 'Psicòleg i Orientador Educatiu',
+    code: 'Codi',
   },
   nav: {
     dashboard: 'Escriptori',
@@ -134,6 +136,7 @@ export default {
     fields: {
       name: 'Nom', surname: 'Cognoms', birth: 'Data de naixement', age: 'Edat',
       level: 'Nivell', group: 'Grup', tutor: 'Tutor/a',
+      tutors: 'Tutors/es del grup', tutorIndividual: 'Tutor/a individual',
       originCentre: 'Centre de procedència', enrolled: 'Data d’alta a l’expedient',
       gender: 'Gènere', repeats: 'Repeticions', pendingSubjects: 'Matèries pendents',
       attendance: 'Assistència (%)', status: 'Estat de l’expedient',
@@ -165,6 +168,7 @@ export default {
     addMeasure: 'Afegeix una mesura', measureText: 'Mesura o suport',
     measureType: 'Tipus', measureNorm: 'Referència normativa',
     addDiagnosis: 'Afegeix un diagnòstic', diagnosisPro: 'Professional que l’emet',
+    tutorsHint: 'Separeu els tutors/es amb comes. Un grup pot tenir cotutoria.',
   },
   records: {
     title: 'Registres de seguiment',
@@ -337,6 +341,13 @@ export default {
     index: 'Índex',
     noStudent: 'Trieu un alumne/a.',
     copyText: 'Copia com a text',
+    pickSections: 'Apartats a incloure',
+    sectionsHint: 'Desmarqueu el que no vulgueu que surti al document.',
+    allSections: 'Tots', noSections: 'Cap',
+    sections: {
+      letter: 'Text de la convocatòria',
+      summary: 'Resum general',
+    },
   },
   settings: {
     title: 'Configuració',

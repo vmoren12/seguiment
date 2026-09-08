@@ -66,7 +66,18 @@
 }
 .navitem[data-alert="true"] .navitem__badge { background: var(--danger-bg); color: var(--danger); }
 .navsep { height: var(--bw); background: var(--line-soft); margin: var(--s2) var(--s3); }
-.sidenav__foot { margin-top: auto; padding: var(--s3); font-size: var(--fs-xs); color: var(--text-3); }
+.sidenav__foot {
+  margin-top: auto; padding: var(--s4) var(--s3) var(--s3);
+  font-size: var(--fs-xs); color: var(--text-3);
+  border-top: var(--bw) solid var(--line-soft);
+  display: flex; flex-direction: column; gap: 3px;
+}
+.sidenav__foot p { margin: 0; }
+.sidenav__author b { display: block; color: var(--text-2); font-weight: 600; }
+.sidenav__author span { display: block; }
+.sidenav__legal { margin-top: 2px; }
+.sidenav__legal a { color: var(--text-2); text-decoration-color: var(--line); text-underline-offset: 2px; }
+.sidenav__legal a:hover { color: var(--accent); }
 
 .scrim { position: fixed; inset: 0; z-index: 50; background: rgba(0,0,0,.35); border: 0; }
 

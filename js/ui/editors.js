@@ -56,7 +56,8 @@ export function expandSnippets(text, context = {}) {
     curs: student?.level || settings().centre?.schoolYear || '',
     grup: student?.group || '',
     data: fmtDate(today()),
-    tutor: student?.tutorName || '',
+    tutor: sel.tutorLabel(student),
+    tutorindividual: student?.tutorIndividual || '',
     professional: settings().centre?.professional || '',
     centre: settings().centre?.name || '',
   };
@@ -197,7 +198,14 @@ export function editStudent(studentId = '', { onSaved } = {}) {
       ${field({ name: 'gender', label: t('students.fields.gender'), type: 'select', value: s.gender || 'noConsta', options: enumOptions('gender') })}
       ${field({ name: 'level', label: t('students.fields.level'), value: s.level, list: 'dl-levels' })}
       ${field({ name: 'group', label: t('students.fields.group'), value: s.group, list: 'dl-groups' })}
-      ${field({ name: 'tutorName', label: t('students.fields.tutor'), value: s.tutorName, list: 'dl-tutors' })}
+      ${multiField({
+    name: 'tutors',
+    label: t('students.fields.tutors'),
+    value: s.tutors,
+    list: 'dl-tutors',
+    hint: t('students.tutorsHint'),
+  })}
+      ${field({ name: 'tutorIndividual', label: t('students.fields.tutorIndividual'), value: s.tutorIndividual, list: 'dl-tutors' })}
       ${field({ name: 'originCentre', label: t('students.fields.originCentre'), value: s.originCentre })}
       ${field({ name: 'enrolled', label: t('students.fields.enrolled'), type: 'date', value: s.enrolled || today() })}
       ${multiField({ name: 'tags', label: t('students.fields.tags'), value: s.tags, list: 'dl-tags' })}
@@ -279,7 +287,8 @@ export function editStudent(studentId = '', { onSaved } = {}) {
         gender: v.gender,
         level: v.level,
         group: v.group,
-        tutorName: v.tutorName,
+        tutors: parseMulti(v.tutors),
+        tutorIndividual: v.tutorIndividual,
         originCentre: v.originCentre,
         enrolled: v.enrolled,
         tags: parseMulti(v.tags),
@@ -310,9 +319,7 @@ export function editStudent(studentId = '', { onSaved } = {}) {
         },
         status: { value: v.statusValue, date: v.statusDate, reason: v.statusReason },
       };
-      const saved = act.save('students', data, {
-        fields: ['name', 'surname', 'level', 'group', 'tutorName', 'nese', 'status', 'health', 'family'],
-      });
+      const saved = act.save('students', data);
       toast(t('common.saved'));
       onSaved?.(saved);
       return true;

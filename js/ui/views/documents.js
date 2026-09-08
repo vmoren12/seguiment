@@ -7,9 +7,10 @@ import { t, tEnum, fmtDate, fmtDateTime } from '../../core/i18n.js';
 import * as sel from '../../domain/selectors.js';
 import { current, setQuery } from '../router.js';
 import { schoolYearRange, termRange } from '../../core/dates.js';
-import { renderDocument, printDocument, documentText } from '../print.js';
+import { renderDocument, printDocument, documentText, documentSections } from '../print.js';
 import { copyText } from '../../core/util.js';
 import { toast } from '../components/toast.js';
+import { scheduleRender } from '../shell.js';
 
 const DOCS = [
   { key: 'followUp', doc: 'followUp', needs: ['student', 'period'] },
@@ -22,6 +23,27 @@ const DOCS = [
 ];
 
 const PERIODS = ['term1', 'term2', 'term3', 'year'];
+
+/**
+ * Apartats descartats per document, mentre dura la sessió. Es guarda el que
+ * s'exclou i no el que s'inclou, de manera que qualsevol apartat nou surti
+ * activat per defecte.
+ */
+const excluded = new Map();
+
+function isOn(kind, key) { return !excluded.get(kind)?.has(key); }
+
+function setOn(kind, key, on) {
+  if (!excluded.has(kind)) excluded.set(kind, new Set());
+  const set = excluded.get(kind);
+  if (on) set.delete(key);
+  else set.add(key);
+}
+
+/** Claus dels apartats actius del document indicat. */
+function activeSections(kind) {
+  return documentSections(kind).filter((x) => isOn(kind, x.key)).map((x) => x.key);
+}
 
 export function title() { return { title: t('documents.title'), subtitle: '' }; }
 
@@ -46,6 +68,7 @@ export function render({ state }) {
   const records = q.student ? sel.recordsOf(state, q.student) : [];
   const appointments = q.student ? sel.appointmentsOf(state, q.student) : [];
   const ready = doc.needs.every((n) => (n === 'period' ? true : q[n]));
+  const sections = documentSections(doc.doc);
 
   return html`
     <div class="page-head">
@@ -107,6 +130,23 @@ export function render({ state }) {
             </div>` : ''}
         </div>
 
+        <fieldset class="fieldset" style="margin-top:16px">
+          <legend>${t('documents.pickSections')}</legend>
+          <div class="row row--between" style="margin-bottom:4px">
+            <p class="field__hint" style="margin:0">${t('documents.sectionsHint')}</p>
+            <span class="row row--tight">
+              <button type="button" class="btn btn--sm btn--ghost" data-act="doc:sections:all">${t('documents.allSections')}</button>
+              <button type="button" class="btn btn--sm btn--ghost" data-act="doc:sections:none">${t('documents.noSections')}</button>
+            </span>
+          </div>
+          <div class="stack stack--sm">
+            ${sections.map((x) => html`<label class="check">
+              <input type="checkbox" data-act-change="doc:section" data-key="${x.key}"${raw(isOn(doc.doc, x.key) ? ' checked' : '')}>
+              <span>${x.label}</span>
+            </label>`)}
+          </div>
+        </fieldset>
+
         <div class="card__foot">
           <div class="row">
             <button type="button" class="btn btn--primary" data-act="doc:print" ${raw(ready ? '' : 'disabled')}>${icon('print')}${t('documents.printNow')}</button>
@@ -130,6 +170,7 @@ function buildOptions(state) {
     recordId: q.record || '',
     appointmentId: q.appointment || '',
     period: periodOf(state),
+    sections: activeSections(selected().doc),
   };
 }
 
@@ -140,6 +181,13 @@ export function actions({ state }) {
     'doc:record': (el) => setQuery({ record: el.value }),
     'doc:appointment': (el) => setQuery({ appointment: el.value }),
     'doc:period': (el) => setQuery({ p: el.value }),
+    'doc:section': (el) => { setOn(selected().doc, el.dataset.key, el.checked); scheduleRender(); },
+    'doc:sections:all': () => { excluded.delete(selected().doc); scheduleRender(); },
+    'doc:sections:none': () => {
+      const kind = selected().doc;
+      excluded.set(kind, new Set(documentSections(kind).map((x) => x.key)));
+      scheduleRender();
+    },
     'doc:print': () => { renderDocument(selected().doc, buildOptions(state)); printDocument(); },
     'doc:copy': async () => {
       renderDocument(selected().doc, buildOptions(state));

@@ -17,7 +17,10 @@ import { exportJSON } from '../../core/export.js';
 import { openModal, confirmModal } from '../components/modal.js';
 import { toast, toastError } from '../components/toast.js';
 import { scheduleRender, applyTheme, changeLanguage } from '../shell.js';
-import { APP_VERSION, SCHEMA_VERSION, DEFAULT_TEMPLATES, RECORD_TYPES } from '../../domain/schema.js';
+import {
+  APP_VERSION, SCHEMA_VERSION, DEFAULT_TEMPLATES, RECORD_TYPES,
+  APP_AUTHOR, APP_YEAR, APP_LICENSE, APP_REPO,
+} from '../../domain/schema.js';
 
 const SECTIONS = ['centre', 'appearance', 'groups', 'calendar', 'types', 'content', 'normative', 'thresholds', 'data', 'privacy', 'about'];
 
@@ -330,6 +333,8 @@ function aboutSection() {
       <div><dt>${t('app.name')}</dt><dd>${t('app.tagline')}</dd></div>
       <div><dt>${t('common.version')}</dt><dd>${t('settings.version', { v: APP_VERSION, s: SCHEMA_VERSION })}</dd></div>
       <div><dt>${t('settings.offline')}</dt><dd>${t('common.yes')}</dd></div>
+      <div><dt>${t('common.author')}</dt><dd>${APP_AUTHOR} — ${t('app.authorRole')}</dd></div>
+      <div><dt>${t('app.code')}</dt><dd><a href="${APP_REPO}" target="_blank" rel="noopener">GitHub</a> · ${APP_LICENSE} · © ${APP_YEAR}</dd></div>
     </dl>
     <p class="small muted" style="margin-top:12px">${t('quick.shortcuts')}: ${t('quick.shortcutNew')} · ${t('quick.shortcutSearch')} · ${t('quick.shortcutSave')} · ${t('quick.shortcutEsc')}</p>
     <div class="card__foot">
@@ -635,7 +640,7 @@ export function actions({ state }) {
 
     'set:export': () => {
       const payload = act.buildExport();
-      exportJSON(payload, `seguiment-${state.settings.centre?.code || 'centre'}`);
+      exportJSON(payload, `rumb-${state.settings.centre?.code || 'centre'}`);
       act.updateSettings({ lastBackupAt: new Date().toISOString() });
       toast(t('common.saved'));
       scheduleRender();
