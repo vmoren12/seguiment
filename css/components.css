@@ -398,3 +398,65 @@
 #doc-preview .doc__foot { margin-top: var(--s5); padding-top: var(--s2); border-top: var(--bw) solid var(--line-soft); font-size: var(--fs-xs); color: var(--text-3); }
 #doc-preview .doc__toc { font-size: var(--fs-sm); }
 #doc-preview { max-height: 60vh; overflow: auto; }
+
+/* --- Camps de verificació dins d'una graella ------------------------------ */
+/* Sense etiqueta pròpia a sobre, una casella quedava enfilada a dalt i
+   trencava l'alineació de la fila; així s'assenta com un control més.        */
+.fields .field--check { justify-content: flex-end; }
+.field--check .check { align-items: center; min-height: 40px; }
+.field--check .check input { margin: 0; }
+
+/* --- Files repetibles (mesures, diagnòstics, acords) ---------------------- */
+.repeats { display: flex; flex-direction: column; gap: var(--s2); }
+.repeat {
+  position: relative;
+  padding: var(--s3);
+  padding-right: calc(var(--s6) + var(--s3));
+  border: var(--bw) solid var(--line-soft); border-radius: var(--r2);
+  background: var(--surface-2);
+}
+.repeat__del { position: absolute; top: var(--s2); right: var(--s2); }
+.repeat__del:hover { background: var(--danger-bg); color: var(--danger); }
+
+/* --- Configuració: menú de seccions -------------------------------------- */
+.settings { display: grid; grid-template-columns: 1fr; gap: var(--s4); align-items: start; }
+.settings__panel { min-width: 0; }
+
+.sectionnav {
+  display: flex; gap: var(--s1); overflow-x: auto; overscroll-behavior-x: contain;
+  scrollbar-width: thin; border-bottom: var(--bw) solid var(--line);
+}
+.sectionnav::-webkit-scrollbar { height: 6px; }
+.sectionnav::-webkit-scrollbar-thumb { background: var(--line); border-radius: 999px; }
+.sectionnav__item {
+  border: 0; background: none; font: inherit; font-size: var(--fs-md);
+  color: var(--text-2); padding: var(--s2) var(--s3); min-height: 40px;
+  cursor: pointer; white-space: nowrap; text-align: left;
+  border-bottom: 2px solid transparent; margin-bottom: -1px; border-radius: var(--r2) var(--r2) 0 0;
+}
+.sectionnav__item:hover { color: var(--text); background: var(--surface-2); }
+.sectionnav__item[aria-selected="true"] { color: var(--text); border-bottom-color: var(--accent); font-weight: 600; }
+
+@media (min-width: 900px) {
+  .settings { grid-template-columns: 208px minmax(0, 1fr); gap: var(--s6); }
+  .sectionnav {
+    flex-direction: column; gap: 2px; overflow-x: visible; overflow-y: auto;
+    border-bottom: 0; border-right: var(--bw) solid var(--line);
+    padding-right: var(--s3); position: sticky; top: calc(var(--topbar-h) + var(--s4));
+    max-height: calc(100dvh - var(--topbar-h) - var(--s7));
+  }
+  .sectionnav__item {
+    border-bottom: 0; margin-bottom: 0; border-radius: var(--r2);
+    border-left: 2px solid transparent; padding-left: var(--s3);
+  }
+  .sectionnav__item[aria-selected="true"] {
+    background: var(--accent-weak); color: var(--accent);
+    border-bottom-color: transparent; border-left-color: var(--accent);
+  }
+}
+
+/* Cel·les d'accions dins d'una taula convertida en targeta */
+@media (max-width: 767px) {
+  .table--cards td.right { justify-content: flex-end; }
+  .table--cards td.right::before { content: none; }
+}

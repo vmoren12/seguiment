@@ -7,11 +7,9 @@ import { html, toHTML } from './dom.js';
 import { t, tEnum, fmtDate, fmtDateTime, fmtDateLong, fmtNum, fmtTime } from '../core/i18n.js';
 import * as store from '../core/store.js';
 import * as sel from '../domain/selectors.js';
-import * as act from '../domain/actions.js';
 import { studentStats, centreStats, groupStats, caseTimeline } from '../domain/stats.js';
 import { columnChart, dataTable } from './components/charts.js';
 import { today, age, schoolYearRange } from '../core/dates.js';
-import { filterAudit } from '../core/audit.js';
 import { chainDoc, chainWho, timelineTitle } from './labels.js';
 
 const root = () => document.getElementById('print-root');
@@ -148,21 +146,6 @@ function timelineTable(state, s) {
   </table>`;
 }
 
-function auditTable(state, { studentId = '', from = '', to = '', limit = 400 } = {}) {
-  const list = filterAudit(state.audit, { studentId, from, to }).slice(-limit).reverse();
-  if (!list.length) return html`<p class="doc__note">${t('audit.empty')}</p>`;
-  return html`<table>
-    <thead><tr><th>${t('common.date')}</th><th>${t('common.actions')}</th><th>${t('common.type')}</th><th>${t('common.author')}</th><th>${t('common.summary')}</th></tr></thead>
-    <tbody>${list.map((e) => html`<tr>
-      <td>${fmtDateTime(e.at)}</td>
-      <td>${t(`audit.actions.${e.action}`)}</td>
-      <td>${t(`audit.entities.${e.entity}`)}</td>
-      <td>${e.author || '—'}</td>
-      <td>${e.summary}</td>
-    </tr>`)}</tbody>
-  </table>`;
-}
-
 /* ---------------------------------------------------------- Documents */
 
 const DOCS = {
@@ -295,7 +278,7 @@ const DOCS = {
     const sections = [
       t('students.tabs.summary'), t('students.fields.measures'), t('stats.timeline'),
       t('casework.consents'), t('casework.referrals'), t('chain.title'),
-      t('students.tabs.stats'), t('audit.title'),
+      t('students.tabs.stats'),
     ];
     return html`
       ${cover(state, {
@@ -327,10 +310,6 @@ const DOCS = {
           <dt>${t('chain.gaps', { n: stats.chainGaps })}</dt><dd>${stats.chainGaps}</dd>
         </dl>
         ${columnChart(stats.perMonth.map((x) => ({ label: x.key.slice(5), value: x.value })))}
-      </section>
-      <section class="doc__section"><h2>${t('audit.title')}</h2>
-        <p class="doc__note">${t('audit.intro')}</p>
-        ${auditTable(state, { studentId, from: period.from, to: period.to })}
       </section>
       ${foot(state)}`;
   },
@@ -410,7 +389,6 @@ const DOCS = {
   })}</tbody>
         </table>
       </section>
-      <section class="doc__section"><h2>${t('audit.title')}</h2>${auditTable(state, { from: period.from, to: period.to, limit: 600 })}</section>
       ${foot(state)}`;
   },
 };
@@ -423,13 +401,12 @@ export const DOCUMENT_KINDS = Object.keys(DOCS);
  * @param {string} kind Clau del document.
  * @param {object} options Paràmetres (studentId, period, recordId…).
  */
-export function renderDocument(kind, options = {}, { log = true } = {}) {
+export function renderDocument(kind, options = {}) {
   const state = store.getState();
   const period = options.period || schoolYearRange(state.settings.centre?.schoolYear);
   const builder = DOCS[kind] || DOCS.followUp;
   const content = builder(state, { ...options, period });
   root().innerHTML = toHTML(html`<article class="doc">${content}</article>`);
-  if (log) act.logExport('Document', t(`documents.types.${kind}`) || kind);
   return root();
 }
 

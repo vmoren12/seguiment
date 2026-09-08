@@ -6,7 +6,6 @@ import { html, icon } from '../dom.js';
 import { t, tEnum, fmtDate } from '../../core/i18n.js';
 import * as sel from '../../domain/selectors.js';
 import * as store from '../../core/store.js';
-import * as act from '../../domain/actions.js';
 import { href } from '../router.js';
 import { exportCSV } from '../../core/export.js';
 import { editService, editStaff, editServiceLink, annulEntity } from '../editors.js';
@@ -108,7 +107,6 @@ export function actions({ state }) {
         sel.studentsOfService(state, s.id).length,
       ]);
       exportCSV(['Servei', 'Tipus', 'Professional', 'Telèfon', 'Correu', 'Freqüència', 'Casos'], rows, 'serveis');
-      act.logExport('CSV', `${rows.length} serveis`);
     },
   };
 }

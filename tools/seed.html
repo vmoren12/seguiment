@@ -1,34 +1,54 @@
 <!doctype html>
-<html lang="ca">
+<html lang="ca" data-theme="auto">
 <head>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
 <title>Seguiment — carrega dades d'exemple</title>
-<style>body{font:14px system-ui;margin:24px;max-width:52ch}</style>
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/components.css">
+<style>
+  body { padding: var(--s6) var(--s4); }
+  main { max-width: 560px; margin: 0 auto; display: flex; flex-direction: column; gap: var(--s4); }
+</style>
 </head>
 <body>
-<h1>Dades d'exemple</h1>
-<p id="msg">Preparant…</p>
-<p><a href="../index.html">Obre l'aplicació</a></p>
+<main>
+  <div class="card">
+    <div class="card__head"><h3>Dades d'exemple</h3></div>
+    <p class="muted small">Eina de desenvolupament: escriu un magatzem d'exemple al navegador i substitueix el que hi hagi.</p>
+    <p id="msg" class="notice" style="margin-top:12px">Preparant…</p>
+    <div class="card__foot">
+      <a class="btn btn--primary" href="../index.html">Obre l'aplicació</a>
+    </div>
+  </div>
+</main>
 
 <script type="module">
 // Escriu un magatzem d'exemple a localStorage i obre l'aplicació.
 // Eina de desenvolupament: no forma part de l'aplicació.
-const store = await import('../js/core/store.js');
-const schema = await import('../js/domain/schema.js');
-const demo = await import('../js/domain/demo.js');
+const msg = document.getElementById('msg');
+try {
+  const store = await import('../js/core/store.js');
+  const schema = await import('../js/domain/schema.js');
+  const demo = await import('../js/domain/demo.js');
 
-store.setState(schema.defaultState(), { save: false });
-demo.loadDemoData();
-const state = store.getState();
-state.settings.centre.name = 'Institut Escola Exemple';
-state.settings.centre.code = '08099999';
-state.settings.centre.address = 'Carrer de la Mostra, 1 — 08000 Vila';
-state.settings.centre.professional = 'Orientació educativa';
-localStorage.setItem(schema.STORAGE_KEY, JSON.stringify(state));
+  store.setState(schema.defaultState(), { save: false });
+  demo.loadDemoData();
+  const state = store.getState();
+  state.settings.centre.name = 'Institut Escola Exemple';
+  state.settings.centre.code = '08099999';
+  state.settings.centre.address = 'Carrer de la Mostra, 1 — 08000 Vila';
+  state.settings.centre.professional = 'Orientació educativa';
+  localStorage.setItem(schema.STORAGE_KEY, JSON.stringify(state));
 
-document.getElementById('msg').textContent =
-  `${state.students.length} alumnes, ${state.records.length} registres, ${state.appointments.length} cites i ${state.audit.length} entrades d'auditoria.`;
-if (new URLSearchParams(location.search).get('go') === '1') location.replace('../index.html');
+  msg.className = 'notice notice--ok';
+  msg.textContent = `${state.students.length} alumnes, ${state.records.length} registres i ${state.appointments.length} cites.`;
+  if (new URLSearchParams(location.search).get('go') === '1') location.replace('../index.html');
+} catch (error) {
+  msg.className = 'notice notice--danger';
+  msg.textContent = `No s'han pogut generar les dades: ${error.message}`;
+}
 </script>
 </body>
 </html>

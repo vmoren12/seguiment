@@ -1,8 +1,8 @@
 /**
  * store.js - magatzem d'estat centralitzat.
- * Tota modificació passa per `mutate`, que aplica el canvi, hi afegeix les
- * entrades d'auditoria corresponents, dispara el desat automàtic i notifica
- * els subscriptors. El renderitzat mai modifica l'estat directament.
+ * Tota modificació passa per `mutate`, que aplica el canvi, dispara el desat
+ * automàtic i notifica els subscriptors. El renderitzat mai modifica l'estat
+ * directament.
  */
 import { defaultState } from '../domain/schema.js';
 import * as persist from './persist.js';
@@ -49,18 +49,14 @@ function notify() {
 /**
  * Aplica una modificació a l'estat.
  * @param {(draft: object) => (object|void)} mutator Funció que modifica l'estat.
- * @param {object|object[]|null} auditEntries Entrades d'auditoria a afegir.
  * @param {object} [options]
  * @param {boolean} [options.save=true]    Desa al magatzem local.
  * @param {boolean} [options.silent=false] No notifica els subscriptors.
  */
-export function mutate(mutator, auditEntries = null, options = {}) {
+export function mutate(mutator, options = {}) {
   const { save = true, silent = false } = options;
   const result = mutator(state);
   if (result && typeof result === 'object') state = result;
-
-  const entries = Array.isArray(auditEntries) ? auditEntries : (auditEntries ? [auditEntries] : []);
-  if (entries.length) state.audit.push(...entries);
 
   state.updatedAt = nowStamp();
   revision += 1;
@@ -83,8 +79,12 @@ export async function saveNow() {
   return ok;
 }
 
-/** Modifica la configuració amb una fusió superficial per seccions. */
-export function patchSettings(patch, auditEntries = null) {
+/**
+ * Modifica la configuració amb una fusió superficial per seccions.
+ * Amb `silent` el canvi es desa però no provoca cap repintat: és el que
+ * s'utilitza mentre s'escriu en un camp, per no perdre'n el focus.
+ */
+export function patchSettings(patch, options = {}) {
   return mutate((draft) => {
     Object.entries(patch).forEach(([key, value]) => {
       const current = draft.settings[key];
@@ -94,7 +94,7 @@ export function patchSettings(patch, auditEntries = null) {
         draft.settings[key] = value;
       }
     });
-  }, auditEntries);
+  }, options);
 }
 
 /** Cerca una entitat per identificador dins d'una col·lecció. */

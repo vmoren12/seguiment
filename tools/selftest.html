@@ -128,9 +128,10 @@ check('indicadors', () => {
   return `centre ${centre.records} registres · ${groups.rows.length} grups · alumne ${student.total} intervencions`;
 });
 
-check('accions i auditoria', () => {
-  const before = store.getState().audit.length;
-  const student = act.save('students', { name: 'Prova', surname: 'Autodiagnòstic', level: '1r ESO', group: '1r ESO A' });
+check('accions', () => {
+  const student = act.save('students', { id: undefined, name: 'Prova', surname: 'Autodiagnòstic', level: '1r ESO', group: '1r ESO A' });
+  if (!student.id) throw new Error('l’alumne/a s’ha desat sense identificador');
+  if (!store.find('students', student.id)) throw new Error('l’alumne/a desat no es retroba per identificador');
   const record = act.saveRecord({
     studentIds: [student.id], at: `${dates.today()}T10:00`, type: 'entrevistaFamilia',
     content: 'Contingut de prova', participants: ['Tutor'],
@@ -143,9 +144,13 @@ check('accions i auditoria', () => {
   if (!updated.versions.length) throw new Error('no s’ha creat cap versió');
   act.annul('records', record.id, 'prova');
   if (!store.find('records', record.id).annulled) throw new Error('l’anul·lació no s’ha aplicat');
-  const after = store.getState().audit.length;
-  if (after <= before) throw new Error('l’auditoria no ha registrat res');
-  return `${after - before} entrades noves, ${updated.versions.length} versió`;
+  const related = act.relatedCount(student.id);
+  act.remove('students', student.id);
+  if (store.find('students', student.id)) throw new Error('l’esborrat no s’ha aplicat');
+  if (store.getState().records.some((r) => (r.studentIds || []).includes(student.id))) {
+    throw new Error('han quedat registres orfes');
+  }
+  return `${updated.versions.length} versió, ${related} elements vinculats esborrats`;
 });
 
 check('exportació i importació', () => {
@@ -171,7 +176,7 @@ check('escapament HTML', () => {
 
 // Renderitzat de totes les vistes.
 const views = ['dashboard', 'agenda', 'students', 'student', 'tasks', 'compliance',
-  'casework', 'services', 'stats', 'audit', 'documents', 'settings'];
+  'casework', 'services', 'stats', 'documents', 'settings'];
 
 const container = document.createElement('div');
 container.style.display = 'none';

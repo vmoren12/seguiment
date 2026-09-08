@@ -5,7 +5,7 @@
 import { uid } from '../core/util.js';
 import { today, schoolYear, nowStamp } from '../core/dates.js';
 
-export const APP_VERSION = '1.0.0';
+export const APP_VERSION = '1.1.0';
 export const SCHEMA_VERSION = 1;
 export const STORAGE_KEY = 'seguiment.v1';
 
@@ -136,7 +136,6 @@ export function defaultState() {
     createdAt: nowStamp(),
     updatedAt: nowStamp(),
     settings: defaultSettings(),
-    audit: [],
   };
   COLLECTIONS.forEach((c) => { state[c] = []; });
   return state;
@@ -324,9 +323,10 @@ export function migrate(raw) {
     schemaVersion: SCHEMA_VERSION,
     appVersion: APP_VERSION,
     settings: mergeSettings(fallback.settings, state.settings),
-    audit: Array.isArray(state.audit) ? state.audit : [],
   };
   COLLECTIONS.forEach((c) => { merged[c] = Array.isArray(state[c]) ? state[c] : []; });
+  // Els magatzems antics podien portar un registre d'auditoria: es descarta.
+  delete merged.audit;
   return merged;
 }
 
@@ -353,6 +353,5 @@ export function validateImport(data) {
   }
   const missing = COLLECTIONS.filter((c) => c in data && !Array.isArray(data[c]));
   if (missing.length) throw new Error(`les col·leccions ${missing.join(', ')} no són llistes`);
-  if ('audit' in data && !Array.isArray(data.audit)) throw new Error('el registre d’auditoria no és una llista');
   return true;
 }

@@ -160,6 +160,6 @@ export function mount(root, { state }) {
     preview.innerHTML = `<p class="muted small">${t('documents.noStudent')}</p>`;
     return;
   }
-  const area = renderDocument(doc.doc, buildOptions(state), { log: false });
+  const area = renderDocument(doc.doc, buildOptions(state));
   preview.innerHTML = area.innerHTML;
 }

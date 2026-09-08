@@ -3,7 +3,6 @@
  * Tots els noms són ficticis.
  */
 import * as store from '../core/store.js';
-import { entry as auditEntry } from '../core/audit.js';
 import {
   newStudent, newGuardian, newService, newServiceLink, newRecord,
   newAppointment, newDemand, newReferral, newConsent, newStaff, newAgreement,
@@ -221,8 +220,5 @@ export function loadDemoData() {
       draft.settings.centre.code = '08000000';
       draft.settings.centre.professional = 'Orientació educativa';
     }
-  }, auditEntry({
-    action: 'import', entity: 'data', author: 'Sistema',
-    summary: `Càrrega de dades d’exemple (${students.length} alumnes, ${records.length} registres, ${appointments.length} cites)`,
-  }));
+  });
 }

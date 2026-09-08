@@ -3,7 +3,7 @@
  * connexió. Només s'hi guarden els fitxers de l'aplicació; cap dada personal
  * passa mai per la memòria cau, que viu al mateix dispositiu.
  */
-const VERSION = 'seguiment-v1.0.0';
+const VERSION = 'seguiment-v1.1.0';
 
 const ASSETS = [
   './',
@@ -24,7 +24,6 @@ const ASSETS = [
   'js/core/lang/es.js',
   'js/core/store.js',
   'js/core/persist.js',
-  'js/core/audit.js',
   'js/core/crypto.js',
   'js/core/export.js',
   'js/domain/schema.js',
@@ -51,7 +50,6 @@ const ASSETS = [
   'js/ui/views/casework.js',
   'js/ui/views/services.js',
   'js/ui/views/stats.js',
-  'js/ui/views/audit.js',
   'js/ui/views/documents.js',
   'js/ui/views/settings.js',
 ];

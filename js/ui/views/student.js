@@ -9,14 +9,14 @@ import * as sel from '../../domain/selectors.js';
 import * as store from '../../core/store.js';
 import * as act from '../../domain/actions.js';
 import { studentStats, caseTimeline } from '../../domain/stats.js';
-import { current, setQuery, href } from '../router.js';
+import { current, setQuery, href, navigate } from '../router.js';
 import { age, daysSince, today, schoolYearRange } from '../../core/dates.js';
 import { barList, columnChart, chartBox, dataTable, gauge } from '../components/charts.js';
 import { openModal, confirmModal } from '../components/modal.js';
 import { toast } from '../components/toast.js';
 import {
-  editStudent, editGuardian, editRecord, editAppointment,
-  editDemand, editReferral, editConsent, editServiceLink, annulEntity, closeAppointment,
+  editStudent, editGuardian, editRecord, editAppointment, editDemand, editReferral,
+  editConsent, editServiceLink, annulEntity, closeAppointment, deleteStudent,
 } from '../editors.js';
 import { scheduleRender } from '../shell.js';
 import { renderDocument, printDocument } from '../print.js';
@@ -70,6 +70,7 @@ function header(state, s) {
         <button type="button" class="btn btn--sm" data-act="record:new" data-student="${s.id}">${icon('plus')}${t('records.new')}</button>
         <button type="button" class="btn btn--sm" data-act="appointment:new" data-student="${s.id}">${icon('calendar')}${t('agenda.newAppointment')}</button>
         <button type="button" class="btn btn--sm" data-act="st:edit">${icon('edit')}${t('common.edit')}</button>
+        <button type="button" class="btn btn--sm btn--danger" data-act="st:del">${icon('trash')}${t('common.delete')}</button>
       </div>
     </div>
 
@@ -583,6 +584,7 @@ export function actions({ state, route }) {
   return {
     'st:tab': (el) => setQuery({ t: el.dataset.tab, r: '' }),
     'st:edit': () => editStudent(id, { onSaved: refresh }),
+    'st:del': () => deleteStudent(id, { onDone: () => navigate('alumnat') }),
     'st:guardian:new': () => editGuardian(id, '', { onSaved: refresh }),
     'st:guardian:edit': (el) => editGuardian(id, el.dataset.id, { onSaved: refresh }),
     'st:guardian:del': (el) => annulEntity('guardians', el.dataset.id, { onDone: refresh }),
@@ -611,7 +613,6 @@ export function actions({ state, route }) {
       const { exportJSON } = await import('../../core/export.js');
       const payload = act.buildExport({ studentId: id });
       exportJSON(payload, `traspas-${sel.listName(s, false)}`);
-      act.logExport('JSON', `Traspàs de ${sel.listName(s, false)}`);
       toast(t('common.saved'));
     },
   };

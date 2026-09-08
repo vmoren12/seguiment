@@ -458,7 +458,6 @@ function exportAgenda() {
     alarmMinutes: a.reminderMinutes || 0,
   })), 'agenda');
 
-  act.logExport('ICS', `${list.length} cites`);
   toast(t('common.saved'));
 }
 

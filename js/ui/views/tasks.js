@@ -124,7 +124,6 @@ export function actions({ state }) {
         ]),
         'tasques',
       );
-      act.logExport('CSV', `${list.length} tasques`);
     },
   };
 }

@@ -5,7 +5,6 @@ import { html, icon } from '../dom.js';
 import { t, tEnum, fmtDate } from '../../core/i18n.js';
 import * as sel from '../../domain/selectors.js';
 import * as store from '../../core/store.js';
-import * as act from '../../domain/actions.js';
 import { current, setQuery, href } from '../router.js';
 import { diffDays } from '../../core/dates.js';
 import { exportCSV } from '../../core/export.js';
@@ -161,7 +160,6 @@ export function actions({ state }) {
             c.validUntil, c.document, c.scope,
           ]), 'consentiments');
       }
-      act.logExport('CSV', t(`casework.${active}`));
     },
   };
 }

@@ -8,7 +8,8 @@ import * as store from '../../core/store.js';
 import { current, setQuery, href } from '../router.js';
 import { age, daysSince } from '../../core/dates.js';
 import { exportCSV } from '../../core/export.js';
-import { logExport } from '../../domain/actions.js';
+import { editStudent, deleteStudent } from '../editors.js';
+import { scheduleRender } from '../shell.js';
 
 export function title({ state }) {
   return { title: t('students.title'), subtitle: t('students.count', { n: sel.allStudents(state).length }) };
@@ -89,6 +90,7 @@ export function render({ state }) {
             <th>PI</th>
             <th>${t('students.lastContact')}</th>
             <th>${t('common.state')}</th>
+            <th><span class="sr-only">${t('common.actions')}</span></th>
           </tr></thead>
           <tbody>
             ${list.map((s) => {
@@ -111,6 +113,12 @@ export function render({ state }) {
     ? html`<span class="${gap >= gapThreshold ? 'chip chip--warn' : ''}">${fmtDate(last)}</span>`
     : html`<span class="muted-2">${t('students.noRecords')}</span>`}</td>
               <td data-th="${t('common.state')}"><span class="chip ${s.status?.value === 'actiu' ? 'chip--ok' : s.status?.value === 'tancat' ? '' : 'chip--info'}">${tEnum('fileState', s.status?.value)}</span></td>
+              <td class="right nowrap">
+                <button type="button" class="iconbtn iconbtn--sm" data-act="students:edit" data-id="${s.id}"
+                  title="${t('common.edit')}" aria-label="${t('common.edit')}">${icon('edit')}</button>
+                <button type="button" class="iconbtn iconbtn--sm" data-act="students:del" data-id="${s.id}"
+                  title="${t('students.delete')}" aria-label="${t('students.delete')}">${icon('trash')}</button>
+              </td>
             </tr>`;
   })}
           </tbody>
@@ -128,6 +136,8 @@ export function actions({ state }) {
     'students:filter': (el) => setQuery({ [el.dataset.key]: el.value }),
     'students:clear': () => setQuery({ q: '', level: '', group: '', nese: '', status: '', tutor: '', service: '', gap: '' }),
     'students:open': (el) => { window.location.hash = href('alumnat', el.dataset.id); },
+    'students:edit': (el) => editStudent(el.dataset.id, { onSaved: scheduleRender }),
+    'students:del': (el) => deleteStudent(el.dataset.id, { onDone: scheduleRender }),
     'students:key': (el, event) => {
       if (event.key === 'Enter' || event.key === ' ') {
         event.preventDefault();
@@ -145,16 +155,8 @@ export function actions({ state }) {
         ]),
         'alumnat',
       );
-      logExport('CSV', `${list.length} alumnes`);
     },
   };
 }
 
-export function mount(root) {
-  const search = root.querySelector('#students-q');
-  if (search && document.activeElement !== search && search.value) {
-    search.focus();
-    search.setSelectionRange(search.value.length, search.value.length);
-  }
-}
 

@@ -22,7 +22,6 @@ import * as viewCompliance from './views/compliance.js';
 import * as viewCasework from './views/casework.js';
 import * as viewServices from './views/services.js';
 import * as viewStats from './views/stats.js';
-import * as viewAudit from './views/audit.js';
 import * as viewDocuments from './views/documents.js';
 import * as viewSettings from './views/settings.js';
 
@@ -38,7 +37,6 @@ const NAV = [
   { route: 'serveis', key: 'services', icon: 'network' },
   { route: 'estadistiques', key: 'stats', icon: 'chart' },
   { route: 'documents', key: 'documents', icon: 'file' },
-  { route: 'auditoria', key: 'audit', icon: 'history' },
   { separator: true },
   { route: 'configuracio', key: 'settings', icon: 'settings' },
 ];
@@ -52,12 +50,12 @@ const VIEWS = {
   demandes: viewCasework,
   serveis: viewServices,
   estadistiques: viewStats,
-  auditoria: viewAudit,
   documents: viewDocuments,
   configuracio: viewSettings,
 };
 
 let renderScheduled = false;
+let lastViewKey = '';
 
 /* ------------------------------------------------------------ Navegació */
 
@@ -112,6 +110,50 @@ function setNavOpen(open) {
 
 /* ------------------------------------------------------- Cicle de pintat */
 
+/** Escapa un valor per utilitzar-lo dins d'un selector d'atribut. */
+function attrValue(value) {
+  return String(value).replace(/(["\\])/g, '\\$1');
+}
+
+/**
+ * Selector estable del camp que tenia el focus. El repintat reemplaça tot
+ * l'HTML de la vista, així que cal poder retrobar el mateix control per
+ * tornar-li el focus i el cursor: si no, escriure una lletra el perdria.
+ */
+function focusSelector(el) {
+  if (!el || !(el instanceof HTMLElement)) return '';
+  if (!/^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)) return '';
+  if (el.id) return `#${CSS.escape(el.id)}`;
+  const parts = [];
+  if (el.name) parts.push(`[name="${attrValue(el.name)}"]`);
+  if (el.dataset.path) parts.push(`[data-path="${attrValue(el.dataset.path)}"]`);
+  if (el.dataset.id) parts.push(`[data-id="${attrValue(el.dataset.id)}"]`);
+  if (el.dataset.k) parts.push(`[data-k="${attrValue(el.dataset.k)}"]`);
+  return parts.length ? el.tagName.toLowerCase() + parts.join('') : '';
+}
+
+/** Recorda quin camp té el focus i on hi ha el cursor. */
+function captureFocus(root) {
+  const el = document.activeElement;
+  if (!el || !root.contains(el)) return null;
+  const selector = focusSelector(el);
+  if (!selector) return null;
+  const caret = {};
+  try { caret.start = el.selectionStart; caret.end = el.selectionEnd; } catch { /* sense selecció */ }
+  return { selector, ...caret };
+}
+
+/** Torna el focus (i el cursor) al camp equivalent després del repintat. */
+function restoreFocus(root, snapshot) {
+  if (!snapshot) return;
+  let el = null;
+  try { el = root.querySelector(snapshot.selector); } catch { el = null; }
+  if (!el || el === document.activeElement) return;
+  el.focus({ preventScroll: true });
+  if (snapshot.start === undefined || snapshot.start === null) return;
+  try { el.setSelectionRange(snapshot.start, snapshot.end); } catch { /* tipus sense cursor */ }
+}
+
 /** Torna a pintar la vista activa. */
 export function render() {
   const state = store.getState();
@@ -129,9 +171,18 @@ export function render() {
 
   setViewActions(module.actions ? module.actions(context) : {});
   const root = document.getElementById('view');
+  const focused = captureFocus(root);
   paint(root, module.render(context));
   if (module.mount) module.mount(root, context);
-  root.scrollTop = 0;
+  restoreFocus(root, focused);
+
+  // En canviar de vista es torna a dalt; dins d'una mateixa vista es
+  // manté la posició, perquè un repintat no faci saltar la pàgina.
+  const viewKey = `${route.name}/${route.id}`;
+  if (viewKey !== lastViewKey) {
+    lastViewKey = viewKey;
+    window.scrollTo({ top: 0 });
+  }
 }
 
 /** Demana un repintat agrupant crides successives. */
@@ -273,10 +324,31 @@ export function applyTheme(theme) {
   document.documentElement.dataset.theme = theme || 'auto';
 }
 
+/**
+ * Les tires de navegació horitzontals (pestanyes, filtres, menú de seccions)
+ * no responen a la roda del ratolí per defecte: aquí s'hi tradueix el
+ * desplaçament vertical en horitzontal quan no hi ha res més per desplaçar.
+ */
+function bindWheelScroll() {
+  document.addEventListener('wheel', (event) => {
+    const strip = event.target.closest('.tabs, .filters, [data-hscroll]');
+    if (!strip) return;
+    const overflowX = strip.scrollWidth - strip.clientWidth;
+    const overflowY = strip.scrollHeight - strip.clientHeight;
+    if (overflowY > 1 || overflowX < 1) return;
+    const delta = Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY;
+    if (!delta) return;
+    const before = strip.scrollLeft;
+    strip.scrollLeft = before + delta;
+    if (strip.scrollLeft !== before) event.preventDefault();
+  }, { passive: false });
+}
+
 /** Instal·la la capa d'interfície. */
 export function initShell() {
   installDelegation();
   bindSaveIndicator();
+  bindWheelScroll();
 
   registerGlobalActions({
     'nav:toggle': () => setNavOpen($('#sidenav').dataset.open !== 'true'),

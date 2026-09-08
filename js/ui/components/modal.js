@@ -2,18 +2,29 @@
  * modal.js - diàlegs modals accessibles: focus atrapat, tancament amb Escape
  * i retorn del focus a l'element que els ha obert.
  */
-import { toHTML, icon } from '../dom.js';
+import { html, raw, toHTML, icon } from '../dom.js';
+import { esc } from '../../core/util.js';
 import { t } from '../../core/i18n.js';
 
 const stack = [];
+
+/**
+ * Contingut d'un tros del diàleg. Les cadenes es prenen com a HTML ja
+ * preparat (és el que documenta l'API); qualsevol altra cosa passa per
+ * `toHTML`, que escapa el text interpolat.
+ */
+function content(value) {
+  if (value === null || value === undefined) return '';
+  return typeof value === 'string' ? value : toHTML(value);
+}
 
 const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 /**
  * Obre un diàleg modal.
  * @param {object} config
- * @param {string} config.title    Títol del diàleg.
- * @param {*}      config.body     Contingut (cadena o resultat de `html`).
+ * @param {string} config.title    Títol del diàleg (text pla).
+ * @param {*}      config.body     Contingut: HTML en cadena o resultat de `html`.
  * @param {*}      [config.footer] Peu personalitzat.
  * @param {'narrow'|'default'|'wide'} [config.size]
  * @param {boolean} [config.form]  Embolcalla el cos en un formulari.
@@ -33,15 +44,15 @@ export function openModal(config) {
   const host = document.createElement('div');
   host.className = `modal${size === 'wide' ? ' modal--wide' : size === 'narrow' ? ' modal--narrow' : ''}`;
   host.innerHTML = `
-    <button type="button" class="modal__scrim" data-modal-close aria-label="${t('a11y.closeDialog')}"></button>
-    <div class="modal__box" role="dialog" aria-modal="true" aria-label="${String(title).replace(/"/g, '&quot;')}">
+    <button type="button" class="modal__scrim" data-modal-close aria-label="${esc(t('a11y.closeDialog'))}"></button>
+    <div class="modal__box" role="dialog" aria-modal="true" aria-label="${esc(title)}">
       <div class="modal__head">
-        <h2>${toHTML(title)}</h2>
-        <button type="button" class="iconbtn" data-modal-close aria-label="${t('a11y.closeDialog')}">${toHTML(icon('close'))}</button>
+        <h2>${esc(title)}</h2>
+        <button type="button" class="iconbtn" data-modal-close aria-label="${esc(t('a11y.closeDialog'))}">${toHTML(icon('close'))}</button>
       </div>
       ${form ? '<form class="modal__form" novalidate style="display:contents">' : ''}
-      <div class="modal__body">${toHTML(body)}</div>
-      <div class="modal__foot">${footer !== undefined ? toHTML(footer) : defaultFooter(closeLabel, submitLabel, showSubmit, form)}</div>
+      <div class="modal__body">${content(body)}</div>
+      <div class="modal__foot">${footer !== undefined ? content(footer) : defaultFooter(closeLabel, submitLabel, showSubmit, form)}</div>
       ${form ? '</form>' : ''}
     </div>`;
 
@@ -100,8 +111,8 @@ export function openModal(config) {
 
 function defaultFooter(closeLabel, submitLabel, showSubmit, form) {
   return `
-    <button type="button" class="btn" data-modal-close>${closeLabel}</button>
-    ${showSubmit ? `<button type="${form ? 'submit' : 'button'}" class="btn btn--primary">${submitLabel}</button>` : ''}`;
+    <button type="button" class="btn" data-modal-close>${esc(closeLabel)}</button>
+    ${showSubmit ? `<button type="${form ? 'submit' : 'button'}" class="btn btn--primary">${esc(submitLabel)}</button>` : ''}`;
 }
 
 /** Diàleg de confirmació. Retorna una promesa amb el resultat. */
@@ -111,10 +122,10 @@ export function confirmModal({ title, message, confirmLabel = t('common.confirm'
     const api = openModal({
       title,
       size: 'narrow',
-      body: `<p>${toHTML(message)}</p>`,
-      footer: `
+      body: toHTML(html`<p>${message}</p>`),
+      footer: toHTML(html`
         <button type="button" class="btn" data-modal-close>${t('common.cancel')}</button>
-        <button type="button" class="btn ${danger ? 'btn--danger' : 'btn--primary'}" data-confirm>${confirmLabel}</button>`,
+        <button type="button" class="btn ${danger ? 'btn--danger' : 'btn--primary'}" data-confirm>${confirmLabel}</button>`),
       onMount: (element) => {
         element.querySelector('[data-confirm]').addEventListener('click', () => {
           decided = true;
@@ -136,12 +147,12 @@ export function promptModal({ title, label, value = '', placeholder = '', requir
       title,
       size: 'narrow',
       form: true,
-      body: `<div class="field">
+      body: toHTML(html`<div class="field">
           <label for="${id}">${label}</label>
           ${multiline
-    ? `<textarea class="textarea" id="${id}" name="value" placeholder="${placeholder}" ${required ? 'required' : ''}>${value}</textarea>`
-    : `<input class="input" id="${id}" name="value" value="${String(value).replace(/"/g, '&quot;')}" placeholder="${placeholder}" ${required ? 'required' : ''} autofocus>`}
-        </div>`,
+    ? html`<textarea class="textarea" id="${id}" name="value" placeholder="${placeholder}" ${raw(required ? 'required' : '')} autofocus>${value}</textarea>`
+    : html`<input class="input" id="${id}" name="value" value="${value}" placeholder="${placeholder}" ${raw(required ? 'required' : '')} autofocus>`}
+        </div>`),
       onSubmit: (event) => {
         const field = event.target.querySelector(`#${id}`);
         if (required && !field.value.trim()) { field.setAttribute('aria-invalid', 'true'); return false; }

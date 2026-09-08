@@ -70,7 +70,7 @@ function centreSection(s) {
       ${setting('centre.code', t('settings.centreCode'), { value: s.centre.code })}
       ${setting('centre.address', t('settings.centreAddress'), { value: s.centre.address })}
       ${setting('centre.schoolYear', t('settings.schoolYear'), { value: s.centre.schoolYear || schoolYear(), hint: 'Format AAAA-AAAA' })}
-      ${setting('centre.professional', t('settings.professionalName'), { value: s.centre.professional, hint: 'Signa els registres i l’auditoria' })}
+      ${setting('centre.professional', t('settings.professionalName'), { value: s.centre.professional, hint: 'Signa els registres i els documents' })}
       ${setting('centre.role', t('settings.professionalRole'), {
     type: 'select',
     value: s.centre.role,
@@ -136,9 +136,9 @@ function groupsSection(s, state) {
     t('settings.sections.groups'),
     s.groups || [],
     [
-      { label: t('common.group'), render: (g) => html`<input class="input input--sm" value="${g.name}" data-act-change="set:group" data-id="${g.id}" data-k="name">` },
-      { label: t('common.level'), render: (g) => html`<input class="input input--sm" value="${g.level || ''}" data-act-change="set:group" data-id="${g.id}" data-k="level" list="dl-levels">` },
-      { label: t('common.tutor'), render: (g) => html`<input class="input input--sm" value="${g.tutor || ''}" data-act-change="set:group" data-id="${g.id}" data-k="tutor">` },
+      { label: t('common.group'), render: (g) => html`<input class="input input--sm" value="${g.name}" data-act-change="set:group" data-act-input="set:group" data-id="${g.id}" data-k="name">` },
+      { label: t('common.level'), render: (g) => html`<input class="input input--sm" value="${g.level || ''}" data-act-change="set:group" data-act-input="set:group" data-id="${g.id}" data-k="level" list="dl-levels">` },
+      { label: t('common.tutor'), render: (g) => html`<input class="input input--sm" value="${g.tutor || ''}" data-act-change="set:group" data-act-input="set:group" data-id="${g.id}" data-k="tutor">` },
     ],
     t('settings.addGroup'), 'set:group:add', 'set:group:del',
   )}
@@ -164,12 +164,12 @@ function calendarSection(s) {
     [
       {
         label: t('common.day'),
-        render: (a) => html`<select class="select input--sm" data-act-change="set:avail" data-id="${a.id}" data-k="day">
+        render: (a) => html`<select class="select input--sm" data-act-change="set:avail" data-act-input="set:avail" data-id="${a.id}" data-k="day">
           ${[1, 2, 3, 4, 5, 6, 0].map((d) => html`<option value="${d}"${raw(Number(a.day) === d ? ' selected' : '')}>${tEnum('weekday', d)}</option>`)}
         </select>`,
       },
-      { label: t('common.from'), render: (a) => html`<input class="input input--sm" type="time" value="${a.from}" data-act-change="set:avail" data-id="${a.id}" data-k="from">` },
-      { label: t('common.to'), render: (a) => html`<input class="input input--sm" type="time" value="${a.to}" data-act-change="set:avail" data-id="${a.id}" data-k="to">` },
+      { label: t('common.from'), render: (a) => html`<input class="input input--sm" type="time" value="${a.from}" data-act-change="set:avail" data-act-input="set:avail" data-id="${a.id}" data-k="from">` },
+      { label: t('common.to'), render: (a) => html`<input class="input input--sm" type="time" value="${a.to}" data-act-change="set:avail" data-act-input="set:avail" data-id="${a.id}" data-k="to">` },
     ],
     t('settings.addAvailability'), 'set:avail:add', 'set:avail:del',
   )}
@@ -223,8 +223,8 @@ function contentSection(s) {
     t('settings.phrases'),
     s.phrases || [],
     [
-      { label: t('settings.phraseCategory'), render: (p) => html`<input class="input input--sm" value="${p.category || ''}" data-act-change="set:phrase" data-id="${p.id}" data-k="category">` },
-      { label: t('settings.phraseText'), render: (p) => html`<input class="input input--sm" value="${p.text}" data-act-change="set:phrase" data-id="${p.id}" data-k="text">` },
+      { label: t('settings.phraseCategory'), render: (p) => html`<input class="input input--sm" value="${p.category || ''}" data-act-change="set:phrase" data-act-input="set:phrase" data-id="${p.id}" data-k="category">` },
+      { label: t('settings.phraseText'), render: (p) => html`<input class="input input--sm" value="${p.text}" data-act-change="set:phrase" data-act-input="set:phrase" data-id="${p.id}" data-k="text">` },
     ],
     t('settings.addPhrase'), 'set:phrase:add', 'set:phrase:del',
   )}
@@ -236,8 +236,8 @@ function normativeSection(s) {
     t('settings.normativeCatalog'),
     s.normative || [],
     [
-      { label: t('common.reference'), render: (n) => html`<input class="input input--sm" value="${n.ref}" data-act-change="set:norm" data-id="${n.id}" data-k="ref">` },
-      { label: t('common.title'), render: (n) => html`<input class="input input--sm" value="${n.title}" data-act-change="set:norm" data-id="${n.id}" data-k="title">` },
+      { label: t('common.reference'), render: (n) => html`<input class="input input--sm" value="${n.ref}" data-act-change="set:norm" data-act-input="set:norm" data-id="${n.id}" data-k="ref">` },
+      { label: t('common.title'), render: (n) => html`<input class="input input--sm" value="${n.title}" data-act-change="set:norm" data-act-input="set:norm" data-id="${n.id}" data-k="title">` },
     ],
     t('settings.addNormative'), 'set:norm:add', 'set:norm:del',
   );
@@ -261,6 +261,7 @@ function dataSection(s, state) {
   const last = s.lastBackupAt;
   const gap = last ? daysSince(last) : null;
   const counts = ['students', 'records', 'appointments', 'tasks', 'demands', 'referrals', 'consents', 'services'];
+  const total = counts.reduce((acc, c) => acc + state[c].length, 0);
 
   return html`<div class="stack">
     <section class="card">
@@ -268,9 +269,8 @@ function dataSection(s, state) {
       ${gap !== null && gap >= (s.thresholds?.backupDays ?? 14)
     ? html`<p class="notice notice--warn">${icon('alert')}<span>${t('settings.backupReminder', { n: gap })}</span></p>` : ''}
       <dl class="deflist" style="margin-top:12px">
-        ${counts.map((c) => html`<div><dt>${t(`audit.entities.${c.replace(/s$/, '').replace('serie', 'service')}`) || c}</dt><dd>${state[c].length}</dd></div>`)}
-        <div><dt>${t('audit.title')}</dt><dd>${state.audit.length}</dd></div>
-        <div><dt>${t('common.total')}</dt><dd>${(size / 1024).toFixed(0)} kB</dd></div>
+        ${counts.map((c) => html`<div><dt>${t(`entities.${c}`)}</dt><dd>${state[c].length}</dd></div>`)}
+        <div><dt>${t('common.total')}</dt><dd>${total} · ${(size / 1024).toFixed(0)} kB</dd></div>
         <div><dt>${t('settings.lastBackup', { d: '' })}</dt><dd>${last ? fmtDateTime(last) : t('common.never')}</dd></div>
       </dl>
       <div class="card__foot">
@@ -360,27 +360,36 @@ export function render({ state }) {
 
   return html`
     <div class="page-head"><div><h2>${t('settings.title')}</h2></div></div>
-    <nav class="tabs" role="tablist">
-      ${SECTIONS.map((k) => html`<button type="button" class="tab" role="tab" aria-selected="${k === active}"
-        data-act="set:section" data-s="${k}">${t(`settings.sections.${k}`)}</button>`)}
-    </nav>
-    <div role="tabpanel">${panels[active]()}</div>`;
+    <div class="settings">
+      <nav class="sectionnav" role="tablist" aria-label="${t('settings.title')}" data-hscroll>
+        ${SECTIONS.map((k) => html`<button type="button" class="sectionnav__item" role="tab" aria-selected="${k === active}"
+          data-act="set:section" data-s="${k}">${t(`settings.sections.${k}`)}</button>`)}
+      </nav>
+      <div class="settings__panel" role="tabpanel">${panels[active]()}</div>
+    </div>`;
 }
 
 /* --------------------------------------------------------------- Accions */
 
-function applyPath(path, value, { audit = true } = {}) {
+/**
+ * Aplica un canvi de configuració.
+ * Amb `silent` el valor es desa sense notificar els subscriptors: és el que
+ * s'utilitza mentre s'escriu, perquè el repintat no destrueixi el camp
+ * actiu ni en desplaci el cursor.
+ */
+function applyPath(path, value, { silent = false } = {}) {
   const [head, tail] = path.split('.');
   const patch = tail ? { [head]: { [tail]: value } } : { [head]: value };
-  // Mentre s'escriu, el valor es desa sense deixar constància; l'entrada
-  // d'auditoria s'afegeix un cop quan el camp perd el focus (event change).
-  if (audit) act.updateSettings(patch, `${t('settings.title')}: ${path}`);
-  else store.patchSettings(patch);
+  act.updateSettings(patch, { silent });
 }
 
 function readControl(el) {
   if (el.type === 'checkbox') return el.checked;
-  if (el.type === 'number') return Number(el.value);
+  if (el.type === 'number') {
+    if (el.value === '') return '';
+    const n = Number(el.value);
+    return Number.isFinite(n) ? n : '';
+  }
   return el.value;
 }
 
@@ -404,9 +413,8 @@ async function importFlow() {
       <div class="tablewrap" style="margin-top:12px"><table class="table">
         <thead><tr><th>${t('common.type')}</th><th class="num">${t('common.new')}</th><th class="num">${t('common.updatedAt')}</th></tr></thead>
         <tbody>${Object.entries(preview.detail).filter(([, v]) => v.total).map(([k, v]) => html`<tr>
-          <td>${k}</td><td class="num">${v.add}</td><td class="num">${v.update}</td>
-        </tr>`)}
-        <tr><td>${t('audit.title')}</td><td class="num">${preview.auditNew}</td><td class="num">0</td></tr></tbody>
+          <td>${t(`entities.${k}`)}</td><td class="num">${v.add}</td><td class="num">${v.update}</td>
+        </tr>`)}</tbody>
       </table></div>
       <div class="field" style="margin-top:16px">
         <label for="imp-mode">${t('settings.importMode')}</label>
@@ -466,7 +474,6 @@ async function wipeFlow() {
         event.target.querySelector('#wipe-word').setAttribute('aria-invalid', 'true');
         return false;
       }
-      act.wipeAll();
       store.flush().then(() => {
         persist.wipe();
         location.reload();
@@ -482,7 +489,7 @@ async function lockFlow(enabled) {
     if (!ok) return;
     persist.setEncrypted(false);
     vault.lock();
-    act.updateSettings({ lockEnabled: false }, t('settings.lockDisable'));
+    act.updateSettings({ lockEnabled: false });
     await store.saveNow();
     toast(t('common.saved'));
     scheduleRender();
@@ -510,7 +517,7 @@ async function lockFlow(enabled) {
       if (pw1 !== pw2) { toastError(t('settings.passwordMismatch')); return false; }
       await vault.setPassword(pw1);
       persist.setEncrypted(true);
-      act.updateSettings({ lockEnabled: true }, t('settings.lockEnable'));
+      act.updateSettings({ lockEnabled: true });
       await store.saveNow();
       toast(t('common.saved'));
       scheduleRender();
@@ -526,45 +533,48 @@ export function actions({ state }) {
     'set:change': (el) => {
       const path = el.dataset.path;
       const value = readControl(el);
-      if (path === 'lang') { act.updateSettings({ lang: value }); changeLanguage(value); return; }
-      if (path === 'theme') { applyTheme(value); }
+      if (path === 'lang') { act.updateSettings({ lang: value }, { silent: true }); changeLanguage(value); return; }
+      if (path === 'theme') { applyTheme(value); applyPath(path, value, { silent: true }); return; }
       if (path === 'levels') { applyPath(path, String(value).split('\n').map((x) => x.trim()).filter(Boolean)); scheduleRender(); return; }
-      applyPath(path, value);
+      // Els camps de text ja s'han desat mentre s'escrivia: en perdre el focus
+      // no cal repintar res, i així el focus no salta al camp següent.
+      const silent = !(el.type === 'checkbox' || el.tagName === 'SELECT');
+      applyPath(path, value, { silent });
       if (path === 'presentation' || path === 'autosave') scheduleRender();
     },
     'set:input': (el) => {
-      // Els camps de text es desen amb el mateix mecanisme, amb l'antirebot
-      // del magatzem (500 ms) evitant escriptures excessives.
+      // Es desa a cada pulsació (amb l'antirebot de 500 ms del magatzem) però
+      // sense repintar: la vista ja mostra el valor que l'usuari acaba d'escriure.
       if (el.type === 'checkbox' || el.tagName === 'SELECT') return;
       const path = el.dataset.path;
       if (path === 'levels' || path === 'lang' || path === 'theme') return;
-      applyPath(path, readControl(el), { audit: false });
+      applyPath(path, readControl(el), { silent: true });
     },
 
     'set:group:add': () => {
-      act.updateSettings({ groups: [...(state.settings.groups || []), { id: uid('gr'), name: '', level: '', tutor: '' }] }, t('settings.addGroup'));
+      act.updateSettings({ groups: [...(state.settings.groups || []), { id: uid('gr'), name: '', level: '', tutor: '' }] });
       scheduleRender();
     },
     'set:group:del': (el) => {
-      act.updateSettings({ groups: (state.settings.groups || []).filter((g) => g.id !== el.dataset.id) }, t('common.remove'));
+      act.updateSettings({ groups: (state.settings.groups || []).filter((g) => g.id !== el.dataset.id) });
       scheduleRender();
     },
     'set:group': (el) => {
       act.updateSettings({
         groups: (state.settings.groups || []).map((g) => (g.id === el.dataset.id ? { ...g, [el.dataset.k]: el.value } : g)),
-      });
+      }, { silent: true });
     },
 
     'set:avail:add': () => {
       act.updateSettings({
         calendar: { ...state.settings.calendar, availability: [...(state.settings.calendar.availability || []), { id: uid('av'), day: 1, from: '08:00', to: '14:00' }] },
-      }, t('settings.addAvailability'));
+      });
       scheduleRender();
     },
     'set:avail:del': (el) => {
       act.updateSettings({
         calendar: { ...state.settings.calendar, availability: (state.settings.calendar.availability || []).filter((a) => a.id !== el.dataset.id) },
-      }, t('common.remove'));
+      });
       scheduleRender();
     },
     'set:avail': (el) => {
@@ -573,61 +583,60 @@ export function actions({ state }) {
           ...state.settings.calendar,
           availability: (state.settings.calendar.availability || []).map((a) => (a.id === el.dataset.id ? { ...a, [el.dataset.k]: el.value } : a)),
         },
-      });
+      }, { silent: true });
     },
 
     'set:apptype': (el) => {
       act.updateSettings({
         appointmentTypes: (state.settings.appointmentTypes || []).map((x) => (x.id === el.dataset.id ? { ...x, color: el.value } : x)),
-      });
+      }, { silent: true });
     },
     'set:apptype:del': (el) => {
-      act.updateSettings({ appointmentTypes: (state.settings.appointmentTypes || []).filter((x) => x.id !== el.dataset.id) }, t('common.remove'));
+      act.updateSettings({ appointmentTypes: (state.settings.appointmentTypes || []).filter((x) => x.id !== el.dataset.id) });
       scheduleRender();
     },
 
     'set:tpl:type': (el) => setQuery({ tpl: el.value }),
     'set:tpl:text': (el) => {
-      act.updateSettings({ templates: { ...state.settings.templates, [el.dataset.key]: el.value } });
+      act.updateSettings({ templates: { ...state.settings.templates, [el.dataset.key]: el.value } }, { silent: true });
     },
     'set:tpl:reset': () => {
-      act.updateSettings({ templates: { ...DEFAULT_TEMPLATES } }, t('common.reset'));
+      act.updateSettings({ templates: { ...DEFAULT_TEMPLATES } });
       scheduleRender();
     },
 
     'set:phrase:add': () => {
-      act.updateSettings({ phrases: [...(state.settings.phrases || []), { id: uid('fr'), category: '', text: '' }] }, t('settings.addPhrase'));
+      act.updateSettings({ phrases: [...(state.settings.phrases || []), { id: uid('fr'), category: '', text: '' }] });
       scheduleRender();
     },
     'set:phrase:del': (el) => {
-      act.updateSettings({ phrases: (state.settings.phrases || []).filter((p) => p.id !== el.dataset.id) }, t('common.remove'));
+      act.updateSettings({ phrases: (state.settings.phrases || []).filter((p) => p.id !== el.dataset.id) });
       scheduleRender();
     },
     'set:phrase': (el) => {
       act.updateSettings({
         phrases: (state.settings.phrases || []).map((p) => (p.id === el.dataset.id ? { ...p, [el.dataset.k]: el.value } : p)),
-      });
+      }, { silent: true });
     },
 
     'set:norm:add': () => {
-      act.updateSettings({ normative: [...(state.settings.normative || []), { id: uid('nr'), ref: '', title: '' }] }, t('settings.addNormative'));
+      act.updateSettings({ normative: [...(state.settings.normative || []), { id: uid('nr'), ref: '', title: '' }] });
       scheduleRender();
     },
     'set:norm:del': (el) => {
-      act.updateSettings({ normative: (state.settings.normative || []).filter((n) => n.id !== el.dataset.id) }, t('common.remove'));
+      act.updateSettings({ normative: (state.settings.normative || []).filter((n) => n.id !== el.dataset.id) });
       scheduleRender();
     },
     'set:norm': (el) => {
       act.updateSettings({
         normative: (state.settings.normative || []).map((n) => (n.id === el.dataset.id ? { ...n, [el.dataset.k]: el.value } : n)),
-      });
+      }, { silent: true });
     },
 
     'set:export': () => {
       const payload = act.buildExport();
       exportJSON(payload, `seguiment-${state.settings.centre?.code || 'centre'}`);
-      act.updateSettings({ lastBackupAt: new Date().toISOString() }, t('settings.exportAll'));
-      act.logExport('JSON', t('settings.exportAll'));
+      act.updateSettings({ lastBackupAt: new Date().toISOString() });
       toast(t('common.saved'));
       scheduleRender();
     },
@@ -648,7 +657,6 @@ export function actions({ state }) {
           if (!id) return false;
           const student = store.find('students', id);
           exportJSON(act.buildExport({ studentId: id }), `traspas-${sel.listName(student, false)}`);
-          act.logExport('JSON', `Traspàs de ${sel.listName(student, false)}`);
           toast(t('common.saved'));
           return true;
         },

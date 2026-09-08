@@ -8,7 +8,6 @@ import * as sel from '../../domain/selectors.js';
 import * as store from '../../core/store.js';
 import * as act from '../../domain/actions.js';
 import { href } from '../router.js';
-import { today } from '../../core/dates.js';
 import { exportCSV } from '../../core/export.js';
 import { editReferral, editDemand, editConsent } from '../editors.js';
 import { scheduleRender } from '../shell.js';
@@ -160,7 +159,6 @@ export function actions({ state }) {
       c.demandsUnanswered.forEach((d) => rows.push([t('compliance.demandsUnanswered'), d.motive, d.receivedAt, tEnum('urgency', d.urgency)]));
       c.contactGap.forEach((x) => rows.push([t('compliance.contactGap', { n: '' }), sel.listName(x.student, false), x.last || '', String(x.days ?? '')]));
       exportCSV(['Alerta', 'Element', 'Data', 'Detall'], rows, 'compliment');
-      act.logExport('CSV', `Compliment (${rows.length} alertes) — ${today()}`);
     },
   };
 }

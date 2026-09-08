@@ -106,6 +106,17 @@ function bindPhrases(root) {
   });
 }
 
+/**
+ * Embolcall d'una fila repetible. El botó d'esborrar viu fora de la graella
+ * de camps, ancorat a la cantonada, perquè no en desquadri les columnes.
+ */
+function repeatRow(id, inner) {
+  return html`<div class="repeat" data-row="${id}">
+    ${inner}
+    <button type="button" class="iconbtn iconbtn--sm repeat__del" data-remove-row aria-label="${t('common.remove')}">${icon('trash')}</button>
+  </div>`;
+}
+
 /** Repetidor genèric de files dins d'un formulari. */
 function bindRepeater(root, { addSelector, listSelector, template }) {
   const list = root.querySelector(listSelector);
@@ -148,31 +159,27 @@ export function editStudent(studentId = '', { onSaved } = {}) {
     professionals: sel.pool(state(), 'professionals'),
   };
 
-  const measureRow = (id, m = {}) => html`<div class="fields fields--3" data-row="${id}" style="align-items:end;margin-bottom:8px">
-    <div class="field field--full"><label>${t('students.measureText')}</label>
-      <input class="input" data-k="text" value="${m.text || ''}" list="dl-measures"></div>
-    <div class="field"><label>${t('students.measureType')}</label>
-      <select class="select" data-k="type">${enumOptions('measure').map((o) => html`<option value="${o.value}"${raw(o.value === m.type ? ' selected' : '')}>${o.label}</option>`)}</select></div>
-    <div class="field"><label>${t('common.date')}</label>
-      <input class="input" type="date" data-k="date" value="${m.date || today()}"></div>
-    <div class="field"><label>${t('students.measureNorm')}</label>
-      <div class="row row--tight">
-        <select class="select" data-k="normativeId">${normativeOptions().map((o) => html`<option value="${o.value}"${raw(o.value === m.normativeId ? ' selected' : '')}>${o.label}</option>`)}</select>
-        <button type="button" class="iconbtn iconbtn--sm" data-remove-row aria-label="${t('common.remove')}">${icon('trash')}</button>
-      </div></div>
-  </div>`;
+  const measureRow = (id, m = {}) => repeatRow(id, html`
+    <div class="fields fields--2">
+      <div class="field field--full"><label>${t('students.measureText')}</label>
+        <input class="input" data-k="text" value="${m.text || ''}" list="dl-measures"></div>
+      <div class="field"><label>${t('students.measureType')}</label>
+        <select class="select" data-k="type">${enumOptions('measure').map((o) => html`<option value="${o.value}"${raw(o.value === m.type ? ' selected' : '')}>${o.label}</option>`)}</select></div>
+      <div class="field"><label>${t('common.date')}</label>
+        <input class="input" type="date" data-k="date" value="${m.date || today()}"></div>
+      <div class="field field--full"><label>${t('students.measureNorm')}</label>
+        <select class="select" data-k="normativeId">${normativeOptions().map((o) => html`<option value="${o.value}"${raw(o.value === m.normativeId ? ' selected' : '')}>${o.label}</option>`)}</select></div>
+    </div>`);
 
-  const diagnosisRow = (id, d = {}) => html`<div class="fields fields--3" data-row="${id}" style="align-items:end;margin-bottom:8px">
-    <div class="field"><label>${t('students.fields.diagnoses')}</label>
-      <input class="input" data-k="text" value="${d.text || ''}" list="dl-diagnoses"></div>
-    <div class="field"><label>${t('students.diagnosisPro')}</label>
-      <input class="input" data-k="pro" value="${d.pro || ''}" list="dl-professionals"></div>
-    <div class="field"><label>${t('common.date')}</label>
-      <div class="row row--tight">
-        <input class="input" type="date" data-k="date" value="${d.date || ''}">
-        <button type="button" class="iconbtn iconbtn--sm" data-remove-row aria-label="${t('common.remove')}">${icon('trash')}</button>
-      </div></div>
-  </div>`;
+  const diagnosisRow = (id, d = {}) => repeatRow(id, html`
+    <div class="fields fields--3">
+      <div class="field"><label>${t('students.fields.diagnoses')}</label>
+        <input class="input" data-k="text" value="${d.text || ''}" list="dl-diagnoses"></div>
+      <div class="field"><label>${t('students.diagnosisPro')}</label>
+        <input class="input" data-k="pro" value="${d.pro || ''}" list="dl-professionals"></div>
+      <div class="field"><label>${t('common.date')}</label>
+        <input class="input" type="date" data-k="date" value="${d.date || ''}"></div>
+    </div>`);
 
   const body = html`
     ${datalist('dl-tutors', pools.tutors)}
@@ -218,16 +225,16 @@ export function editStudent(studentId = '', { onSaved } = {}) {
       ${field({ name: 'sial', label: t('students.fields.sial'), type: 'checkbox', value: nese.sial })}
       <div class="field field--full">
         <span class="field__label">${t('students.fields.measures')}</span>
-        <div data-measures>${(nese.measures || []).map((m) => measureRow(m.id || uid('r'), m))}</div>
-        <button type="button" class="btn btn--sm" data-add-measure>${t('students.addMeasure')}</button>
+        <div class="repeats" data-measures>${(nese.measures || []).map((m) => measureRow(m.id || uid('r'), m))}</div>
+        <button type="button" class="btn btn--sm" data-add-measure>${icon('plus')}${t('students.addMeasure')}</button>
       </div>
     `, 3)}
 
     ${fieldset(t('students.fields.healthNotes'), html`
       <div class="field field--full">
         <span class="field__label">${t('students.fields.diagnoses')}</span>
-        <div data-diagnoses>${(s.health?.diagnoses || []).map((d) => diagnosisRow(d.id || uid('r'), d))}</div>
-        <button type="button" class="btn btn--sm" data-add-diagnosis>${t('students.addDiagnosis')}</button>
+        <div class="repeats" data-diagnoses>${(s.health?.diagnoses || []).map((d) => diagnosisRow(d.id || uid('r'), d))}</div>
+        <button type="button" class="btn btn--sm" data-add-diagnosis>${icon('plus')}${t('students.addDiagnosis')}</button>
       </div>
       ${field({ name: 'medication', label: t('students.fields.medication'), value: s.health?.medication })}
       ${field({ name: 'allergies', label: t('students.fields.allergies'), value: s.health?.allergies })}
@@ -367,19 +374,17 @@ export function editRecord({ recordId = '', studentId = '', prefill = {}, onSave
   const initialContent = existing?.content ?? prefill.content ?? (settings().templates?.[suggestedType] || '');
   const contentId = 'rec-content';
 
-  const agreementRow = (id, a = {}) => html`<div class="fields fields--3" data-row="${id}" style="align-items:end;margin-bottom:8px">
-    <div class="field field--full"><label>${t('records.agreementText')}</label>
-      <input class="input" data-k="text" value="${a.text || ''}"></div>
-    <div class="field"><label>${t('records.agreementOwner')}</label>
-      <input class="input" data-k="owner" value="${a.owner || ''}" list="dl-participants"></div>
-    <div class="field"><label>${t('records.agreementDue')}</label>
-      <input class="input" type="date" data-k="due" value="${a.due || ''}"></div>
-    <div class="field"><label>${t('common.state')}</label>
-      <div class="row row--tight">
-        <select class="select" data-k="state">${enumOptions('taskState').map((o) => html`<option value="${o.value}"${raw(o.value === (a.state || 'pendent') ? ' selected' : '')}>${o.label}</option>`)}</select>
-        <button type="button" class="iconbtn iconbtn--sm" data-remove-row aria-label="${t('common.remove')}">${icon('trash')}</button>
-      </div></div>
-  </div>`;
+  const agreementRow = (id, a = {}) => repeatRow(id, html`
+    <div class="fields fields--3">
+      <div class="field field--full"><label>${t('records.agreementText')}</label>
+        <input class="input" data-k="text" value="${a.text || ''}"></div>
+      <div class="field"><label>${t('records.agreementOwner')}</label>
+        <input class="input" data-k="owner" value="${a.owner || ''}" list="dl-participants"></div>
+      <div class="field"><label>${t('records.agreementDue')}</label>
+        <input class="input" type="date" data-k="due" value="${a.due || ''}"></div>
+      <div class="field"><label>${t('common.state')}</label>
+        <select class="select" data-k="state">${enumOptions('taskState').map((o) => html`<option value="${o.value}"${raw(o.value === (a.state || 'pendent') ? ' selected' : '')}>${o.label}</option>`)}</select></div>
+    </div>`);
 
   const body = html`
     ${datalist('dl-participants', sel.pool(state(), 'participants'))}
@@ -417,8 +422,8 @@ export function editRecord({ recordId = '', studentId = '', prefill = {}, onSave
     <div class="field">
       <span class="field__label">${t('common.agreements')}</span>
       <p class="field__hint">${t('records.agreementsHint')}</p>
-      <div data-agreements>${(r.agreements || prefill.agreements || []).map((a) => agreementRow(a.id, a))}</div>
-      <button type="button" class="btn btn--sm" data-add-agreement>${t('records.addAgreement')}</button>
+      <div class="repeats" data-agreements>${(r.agreements || prefill.agreements || []).map((a) => agreementRow(a.id, a))}</div>
+      <button type="button" class="btn btn--sm" data-add-agreement>${icon('plus')}${t('records.addAgreement')}</button>
     </div>
 
     ${!existing ? field({ name: 'createAppointment', label: t('records.createAppointment'), type: 'checkbox', value: false }) : ''}
@@ -874,6 +879,25 @@ export function editStaff({ staffId = '', onSaved } = {}) {
       return true;
     },
   });
+}
+
+/**
+ * Esborrat definitiu d'un alumne/a. Es demana confirmació indicant quants
+ * elements vinculats desapareixeran, perquè l'acció no té marxa enrere.
+ */
+export async function deleteStudent(studentId, { onDone } = {}) {
+  const student = store.find('students', studentId);
+  if (!student) return;
+  const ok = await confirmModal({
+    title: `${t('students.delete')} — ${sel.listName(student, presentation())}`,
+    message: t('students.deleteWarn', { n: act.relatedCount(studentId) }),
+    confirmLabel: t('students.deleteConfirm'),
+    danger: true,
+  });
+  if (!ok) return;
+  act.remove('students', studentId);
+  toast(t('students.deleted'));
+  onDone?.();
 }
 
 /** Anul·lació genèrica amb motiu i confirmació. */

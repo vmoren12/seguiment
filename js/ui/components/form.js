@@ -4,6 +4,7 @@
  * adequats i marca visual quan el valor és un suggeriment automàtic.
  */
 import { html, raw, toHTML } from '../dom.js';
+import { toast } from './toast.js';
 import { t } from '../../core/i18n.js';
 import { uid } from '../../core/util.js';
 
@@ -52,7 +53,7 @@ export function field(config) {
   } else if (type === 'select') {
     control = html`<select class="select" ${common}>${options.map((o) => html`<option value="${o.value}"${raw(String(o.value) === String(value) ? ' selected' : '')}>${o.label}</option>`)}</select>`;
   } else if (type === 'checkbox') {
-    return html`<div class="field ${className}">
+    return html`<div class="field field--check ${className}">
       <label class="check">
         <input type="checkbox" ${common}${raw(value ? ' checked' : '')}>
         <span>${label}</span>
@@ -114,7 +115,11 @@ export function validate(form) {
   });
   if (!valid) {
     const first = form.querySelector('[aria-invalid="true"]');
+    first?.scrollIntoView({ block: 'center' });
     first?.focus();
+    // Sense missatge, un camp marcat en vermell enmig d'un formulari llarg
+    // passa desapercebut i sembla que el desat no faci res.
+    toast(t('validation.fixErrors'), { type: 'danger' });
   }
   return valid;
 }

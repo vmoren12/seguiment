@@ -20,7 +20,7 @@ Entrevistes, coordinacions, observacions d'aula, aplicació de proves, derivacio
 Herència de context en crear registres des d'una fitxa o des d'una cita, plantilles per tipus de registre, banc de frases reutilitzables, autocompletat sobre valors ja existents, snippets dinàmics (`{{alumne}}`, `{{curs}}`, `{{data}}`, `{{tutor}}`, `{{professional}}`, `{{centre}}`) i generació automàtica de tasques a partir dels acords. Tot el que s'autoempleta queda marcat com a suggerit i és editable.
 
 **Justificació davant d'inspecció**
-Registre d'auditoria *append-only* consultable i exportable, cadena documental del cas que marca visualment els passos sense constància, catàleg normatiu editable (Decret 150/2017, Decret 175/2022, protocols del Departament…) associable a cada mesura, i control de terminis preceptius amb panell de compliment.
+Versionat dels registres consolidats (cada modificació en conserva la versió anterior i el motiu), cadena documental del cas que marca visualment els passos sense constància, catàleg normatiu editable (Decret 150/2017, Decret 175/2022, protocols del Departament…) associable a cada mesura, i control de terminis preceptius amb panell de compliment.
 
 **Estadístiques**
 Tres nivells d'anàlisi —alumne, grup i nivell, i global de centre— amb selector de període. Gràfics SVG construïts per codi, sense llibreries. Exportació a CSV i memòria estadística imprimible.
@@ -49,7 +49,7 @@ Per publicar-la a GitHub Pages: **Settings → Pages → Source: GitHub Actions*
 
 ### Primers passos
 
-1. **Configuració → Dades del centre**: nom, codi, curs escolar i professional responsable (signa els registres i l'auditoria).
+1. **Configuració → Dades del centre**: nom, codi, curs escolar i professional responsable (signa els registres i els documents).
 2. **Configuració → Cursos i grups** i **Agenda i disponibilitat**.
 3. Alta d'alumnat, o bé **Carrega dades d'exemple** des de l'escriptori per veure com funciona.
 4. **Configuració → Dades**: exporteu una còpia de seguretat periòdicament. L'aplicació us ho recorda.
@@ -73,20 +73,20 @@ manifest.webmanifest    Manifest de la PWA
 sw.js                   Service worker (funcionament sense connexió)
 css/                    base · layout · components · print
 js/
-  core/                 utilitats, dates, i18n, estat, persistència, auditoria, xifratge, exportació
+  core/                 utilitats, dates, i18n, estat, persistència, xifratge, exportació
   domain/               esquema, accions, selectors, indicadors, dades d'exemple
   ui/                   dom, encaminador, estructura, editors, documents
     components/         modal, avisos, formularis, gràfics
     views/              escriptori, agenda, alumnat, fitxa, tasques, compliment,
-                        demandes, serveis, estadístiques, auditoria, documents, configuració
+                        demandes, serveis, estadístiques, documents, configuració
 tools/                  servidor local, generador d'icones, autodiagnòstic
 ```
 
-Les capes són estrictes: `core` no coneix el domini, `domain` no coneix la interfície i `ui` no escriu mai directament a l'estat (tot passa per `domain/actions.js`, que hi afegeix l'auditoria).
+Les capes són estrictes: `core` no coneix el domini, `domain` no coneix la interfície i `ui` no escriu mai directament a l'estat (tot passa per `domain/actions.js`, que manté la integritat referencial).
 
 ### Autodiagnòstic
 
-Amb el servidor engegat, obriu `http://localhost:8080/tools/selftest.html`. Comprova la càrrega de tots els mòduls, el càlcul de dates i indicadors, l'auditoria i el versionat, l'exportació i la importació, l'escapament d'HTML, el renderitzat de totes les vistes i formularis, l'etiquetatge dels camps i el rendiment amb 500 alumnes i 5.000 registres.
+Amb el servidor engegat, obriu `http://localhost:8080/tools/selftest.html`. Comprova la càrrega de tots els mòduls, el càlcul de dates i indicadors, el desat i l'esborrat en cascada, el versionat dels registres, l'exportació i la importació, l'escapament d'HTML, el renderitzat de totes les vistes i formularis, l'etiquetatge dels camps i el rendiment amb 500 alumnes i 5.000 registres.
 
 ---
 
@@ -96,7 +96,7 @@ Les dades es desen exclusivament al navegador del dispositiu. No hi ha servidor,
 
 - **Bloqueig opcional amb contrasenya**: xifra el magatzem local amb AES-GCM i PBKDF2-SHA256 (250.000 iteracions). Si es perd la contrasenya, les dades no es poden recuperar.
 - **Mode de presentació**: mostra només inicials, per a reunions i projeccions.
-- **Esborrat total** amb doble confirmació, que deixa constància prèvia a l'auditoria.
+- **Esborrat total** amb doble confirmació i paraula de seguretat.
 
 El centre educatiu és el responsable del tractament als efectes del RGPD (UE) 2016/679 i de la LOPDGDD 3/2018. Li correspon determinar la base jurídica, informar les persones interessades, aplicar les mesures de seguretat adequades i atendre els drets d'accés, rectificació, supressió, limitació, portabilitat i oposició. **Les còpies de seguretat exportades contenen dades de categoria especial i s'han de custodiar xifrades.**
 
@@ -106,7 +106,7 @@ El centre educatiu és el responsable del tractament als efectes del RGPD (UE) 2
 
 - **Sense dependències ni compilació.** Mòduls ES natius, CSS pla i SVG generat per codi. El projecte s'obre, es llegeix i es modifica sense cap cadena d'eines.
 - **Un fitxer per capa, no un fitxer únic.** L'especificació original demanava un sol HTML autònom; per poder ser una PWA instal·lable i offline calen un manifest i un service worker, i els mòduls ES no es carreguen des de `file://`. S'ha mantingut l'esperit —zero dependències, desplegable com a estàtic— i s'ha guanyat mantenibilitat.
-- **L'auditoria és estructural, no un afegit.** Cap escriptura passa per fora de `domain/actions.js`. Mentre s'escriu en un camp de configuració es desa sense deixar constància, i l'entrada d'auditoria s'afegeix un sol cop quan el camp perd el focus, per no inundar el registre.
+- **Escriure mai ha de fer saltar el cursor.** Els canvis de configuració es desen a cada pulsació però sense repintar la vista, i el repintat conserva el camp actiu i la posició del cursor. Cap escriptura passa per fora de `domain/actions.js`.
 - **Eliminació sempre lògica.** Res s'esborra: es marca com a anul·lat amb motiu i data, i les entitats dependents s'anul·len en cascada.
 - **Renderitzat previsible.** Cada vista genera una cadena d'HTML i el contenidor es reemplaça d'un sol cop; els esdeveniments es gestionen per delegació amb atributs `data-act`. No hi ha manipulació dispersa del DOM.
 - **Escapament per defecte.** La plantilla `html` escapa tota interpolació; el text que ha de passar sense escapar s'ha de marcar explícitament amb `raw()`.

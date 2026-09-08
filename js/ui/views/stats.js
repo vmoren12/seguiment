@@ -6,7 +6,6 @@ import { html, icon, raw } from '../dom.js';
 import { t, tEnum, fmtDate, fmtNum } from '../../core/i18n.js';
 import * as sel from '../../domain/selectors.js';
 import * as store from '../../core/store.js';
-import * as act from '../../domain/actions.js';
 import { studentStats, groupStats, centreStats } from '../../domain/stats.js';
 import { current, setQuery, href } from '../router.js';
 import { schoolYearRange, termRange } from '../../core/dates.js';
@@ -280,7 +279,6 @@ export function actions({ state }) {
           ['Alumnat sense contacte', c.noContact],
         ], 'indicadors-centre');
       }
-      act.logExport('CSV', t('stats.title'));
     },
   };
 }

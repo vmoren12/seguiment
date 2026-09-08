@@ -1,10 +1,9 @@
 /**
  * actions.js - lògica de negoci. Tota escriptura de dades passa per aquí
- * per garantir que quedi registrada a l'auditoria i que la integritat
- * referencial es mantingui en anul·lar entitats.
+ * per garantir que la integritat referencial es mantingui en anul·lar o
+ * eliminar entitats.
  */
 import * as store from '../core/store.js';
-import { entry as auditEntry, diff } from '../core/audit.js';
 import { clone, uid } from '../core/util.js';
 import { nowStamp, today, daysSince, addDays, toISODate, addMonths, dateOf } from '../core/dates.js';
 import {
@@ -18,12 +17,6 @@ export function currentAuthor() {
   return store.settings().centre?.professional || '';
 }
 
-/** Nom complet d'un alumne/a per als resums d'auditoria. */
-function studentLabel(id) {
-  const s = store.find('students', id);
-  return s ? `${s.surname}, ${s.name}`.replace(/^, |, $/g, '') : id || '';
-}
-
 const FACTORIES = {
   students: newStudent, records: newRecord, appointments: newAppointment,
   tasks: newTask, guardians: newGuardian, services: newService,
@@ -31,47 +24,37 @@ const FACTORIES = {
   consents: newConsent, staff: newStaff,
 };
 
-const ENTITY_OF = {
-  students: 'student', records: 'record', appointments: 'appointment',
-  tasks: 'task', guardians: 'guardian', services: 'service',
-  serviceLinks: 'service', demands: 'demand', referrals: 'referral',
-  consents: 'consent', staff: 'staff',
-};
-
 /* -------------------------------------------------------------------------
    Operacions genèriques
    ------------------------------------------------------------------------- */
 
 /**
- * Desa una entitat: la crea si no existeix o la actualitza si ja hi és.
+ * Neteja les claus sense valor abans de passar-les a una fàbrica: un `id`
+ * indefinit sobreescriuria l'identificador acabat de generar i deixaria
+ * l'entitat sense identificador utilitzable.
+ */
+function cleanPatch(data) {
+  const out = { ...data };
+  if (out.id === undefined || out.id === null || out.id === '') delete out.id;
+  return out;
+}
+
+/**
+ * Desa una entitat: la crea si no existeix o l'actualitza si ja hi és.
  * Retorna l'entitat resultant.
  */
-export function save(collection, data, { summary, fields, extraAudit = [] } = {}) {
-  const existing = data.id ? store.find(collection, data.id) : null;
-  const before = existing ? clone(existing) : null;
-  const factory = FACTORIES[collection] || ((p) => ({ ...p }));
-  const record = existing ? { ...existing, ...data } : factory(data);
+export function save(collection, data) {
+  const patch = cleanPatch(data);
+  const existing = patch.id ? store.find(collection, patch.id) : null;
+  const factory = FACTORIES[collection] || ((x) => ({ ...x }));
+  const record = existing ? { ...existing, ...patch } : factory(patch);
   record.updatedAt = nowStamp();
 
   store.mutate((draft) => {
-    if (existing) {
-      const index = draft[collection].findIndex((x) => x.id === record.id);
-      draft[collection][index] = record;
-    } else {
-      draft[collection].push(record);
-    }
-  }, [
-    auditEntry({
-      action: existing ? 'update' : 'create',
-      entity: ENTITY_OF[collection] || collection,
-      entityId: record.id,
-      studentId: record.studentId || record.studentIds?.[0] || (collection === 'students' ? record.id : ''),
-      author: currentAuthor(),
-      summary: summary || describe(collection, record),
-      changes: existing ? diff(before, record, fields) : null,
-    }),
-    ...extraAudit,
-  ]);
+    const index = existing ? draft[collection].findIndex((x) => x.id === record.id) : -1;
+    if (index >= 0) draft[collection][index] = record;
+    else draft[collection].push(record);
+  });
 
   return record;
 }
@@ -94,18 +77,53 @@ export function annul(collection, id, reason = '') {
       });
     }
     if (collection === 'students') {
-      // L'expedient es tanca però els registres es conserven per a l'auditoria.
+      // L'expedient es tanca però els registres es conserven.
       const target2 = draft.students.find((x) => x.id === id);
       if (target2) target2.status = { value: 'tancat', date: today(), reason: reason || target2.status?.reason || '' };
     }
-  }, auditEntry({
-    action: 'delete',
-    entity: ENTITY_OF[collection] || collection,
-    entityId: id,
-    studentId: item.studentId || item.studentIds?.[0] || (collection === 'students' ? id : ''),
-    author: currentAuthor(),
-    summary: `${describe(collection, item)}${reason ? ` — ${reason}` : ''}`,
-  }));
+  });
+
+  return item;
+}
+
+/** Col·leccions que pengen d'un alumne/a, amb el camp que hi apunta. */
+const STUDENT_LINKS = [
+  ['guardians', 'studentId'], ['serviceLinks', 'studentId'], ['tasks', 'studentId'],
+  ['demands', 'studentId'], ['referrals', 'studentId'], ['consents', 'studentId'],
+  ['records', 'studentIds'], ['appointments', 'studentIds'],
+];
+
+/** Compta els elements vinculats a un alumne/a (els que s'esborrarien amb ell). */
+export function relatedCount(studentId) {
+  const state = store.getState();
+  return STUDENT_LINKS.reduce((acc, [collection, key]) => acc + state[collection].filter(
+    (x) => (key === 'studentIds' ? (x.studentIds || []).includes(studentId) : x[key] === studentId),
+  ).length, 0);
+}
+
+/**
+ * Esborrat definitiu. A diferència de `annul`, l'entitat desapareix del
+ * magatzem; en el cas d'un alumne/a també tot allò que hi estava vinculat,
+ * perquè no en quedin referències òrfenes.
+ */
+export function remove(collection, id) {
+  const item = store.find(collection, id);
+  if (!item) return null;
+
+  store.mutate((draft) => {
+    draft[collection] = draft[collection].filter((x) => x.id !== id);
+
+    if (collection === 'students') {
+      STUDENT_LINKS.forEach(([target, key]) => {
+        draft[target] = draft[target].filter((x) => (key === 'studentIds'
+          ? !(x.studentIds || []).includes(id)
+          : x[key] !== id));
+      });
+    }
+    if (collection === 'records') {
+      draft.tasks = draft.tasks.filter((task) => !(task.origin?.kind === 'acord' && task.origin.recordId === id));
+    }
+  });
 
   return item;
 }
@@ -117,32 +135,8 @@ export function restore(collection, id) {
   store.mutate((draft) => {
     const target = draft[collection].find((x) => x.id === id);
     if (target) { target.annulled = null; target.updatedAt = nowStamp(); }
-  }, auditEntry({
-    action: 'restore',
-    entity: ENTITY_OF[collection] || collection,
-    entityId: id,
-    author: currentAuthor(),
-    summary: describe(collection, item),
-  }));
+  });
   return item;
-}
-
-/** Descripció curta d'una entitat per als resums d'auditoria. */
-export function describe(collection, item) {
-  switch (collection) {
-    case 'students': return `${item.surname || ''}, ${item.name || ''}`.replace(/^, |, $/g, '') || 'Alumne/a';
-    case 'records': return `Registre ${item.type} (${dateOf(item.at)}) — ${studentLabel(item.studentIds?.[0])}`;
-    case 'appointments': return `Cita ${item.type} ${dateOf(item.start)} ${String(item.start).slice(11, 16)}`;
-    case 'tasks': return `Tasca: ${item.title}`;
-    case 'demands': return `Demanda (${item.origin}) — ${studentLabel(item.studentId)}`;
-    case 'referrals': return `Derivació a ${item.serviceName || 'servei'} — ${studentLabel(item.studentId)}`;
-    case 'consents': return `Consentiment ${item.type} — ${studentLabel(item.studentId)}`;
-    case 'services': return `Servei ${item.name}`;
-    case 'serviceLinks': return `Vinculació servei-alumne`;
-    case 'guardians': return `Referent ${item.name}`;
-    case 'staff': return `Professional ${item.name}`;
-    default: return collection;
-  }
 }
 
 /* -------------------------------------------------------------------------
@@ -163,22 +157,22 @@ export function isSealed(record) {
  * nova amb data i motiu, i les anteriors queden consultables.
  */
 export function saveRecord(data, { reason = '' } = {}) {
-  const existing = data.id ? store.find('records', data.id) : null;
+  const patch = cleanPatch(data);
+  const existing = patch.id ? store.find('records', patch.id) : null;
   const author = currentAuthor();
 
   if (!existing) {
-    const record = save('records', { ...data, author: data.author || author });
+    const record = save('records', { ...patch, author: patch.author || author });
     syncAgreementTasks(record);
     return record;
   }
 
   const before = clone(existing);
-  const sealed = isSealed(existing);
   const version = {
     at: nowStamp(),
     author,
     reason: reason || '',
-    sealed,
+    sealed: isSealed(existing),
     snapshot: {
       at: before.at, type: before.type, content: before.content,
       agreements: before.agreements, participants: before.participants,
@@ -186,23 +180,13 @@ export function saveRecord(data, { reason = '' } = {}) {
     },
   };
 
-  const record = { ...existing, ...data, updatedAt: nowStamp() };
+  const record = { ...existing, ...patch, updatedAt: nowStamp() };
   record.versions = [...(existing.versions || []), version];
 
   store.mutate((draft) => {
     const index = draft.records.findIndex((x) => x.id === record.id);
-    draft.records[index] = record;
-  }, auditEntry({
-    action: sealed ? 'seal' : 'update',
-    entity: 'record',
-    entityId: record.id,
-    studentId: record.studentIds?.[0] || '',
-    author,
-    summary: sealed
-      ? `Modificació d’un registre consolidat — motiu: ${reason || 'no indicat'}`
-      : describe('records', record),
-    changes: diff(before, record, ['at', 'type', 'content', 'agreements', 'participants', 'confidentiality', 'serviceId', 'normativeId']),
-  }));
+    if (index >= 0) draft.records[index] = record;
+  });
 
   syncAgreementTasks(record);
   return record;
@@ -246,14 +230,13 @@ export function syncAgreementTasks(record) {
         }));
       }
     });
-  }, null);
+  });
 }
 
 /** Marca una tasca com a feta i sincronitza l'acord d'origen. */
 export function setTaskState(id, state) {
   const task = store.find('tasks', id);
   if (!task) return null;
-  const before = task.state;
 
   store.mutate((draft) => {
     const target = draft.tasks.find((x) => x.id === id);
@@ -266,14 +249,7 @@ export function setTaskState(id, state) {
       const agreement = record?.agreements?.find((a) => a.id === target.origin.refId);
       if (agreement) agreement.state = state;
     }
-  }, auditEntry({
-    action: 'state',
-    entity: 'task',
-    entityId: id,
-    studentId: task.studentId,
-    author: currentAuthor(),
-    summary: `Tasca «${task.title}»: ${before} → ${state}`,
-  }));
+  });
 
   return store.find('tasks', id);
 }
@@ -285,9 +261,7 @@ export function setTaskState(id, state) {
 /** Desa una cita i, si escau, genera la sèrie de repeticions. */
 export function saveAppointment(data, { applyToSeries = false } = {}) {
   const existing = data.id ? store.find('appointments', data.id) : null;
-  const appointment = save('appointments', data, {
-    fields: ['start', 'end', 'type', 'state', 'modality', 'location', 'attendees', 'studentIds', 'notes'],
-  });
+  const appointment = save('appointments', data);
 
   if (!existing && data.seriesRule && data.seriesRule !== 'none' && data.seriesUntil) {
     createSeries(appointment, data.seriesRule, data.seriesUntil);
@@ -306,10 +280,7 @@ export function saveAppointment(data, { applyToSeries = false } = {}) {
           a.updatedAt = nowStamp();
         }
       });
-    }, auditEntry({
-      action: 'update', entity: 'appointment', entityId: existing.seriesId,
-      author: currentAuthor(), summary: 'Modificació aplicada a tota la sèrie de cites',
-    }));
+    });
   }
 
   return appointment;
@@ -355,10 +326,7 @@ export function createSeries(appointment, rule, until) {
     const first = draft.appointments.find((a) => a.id === appointment.id);
     if (first) { first.seriesId = seriesId; first.seriesRule = rule; }
     draft.appointments.push(...created);
-  }, auditEntry({
-    action: 'create', entity: 'appointment', entityId: seriesId,
-    author: currentAuthor(), summary: `Sèrie de ${created.length + 1} cites (${rule}) fins al ${until}`,
-  }));
+  });
 
   return created;
 }
@@ -367,28 +335,21 @@ export function createSeries(appointment, rule, until) {
 export function setAppointmentState(id, state, reason = '') {
   const appointment = store.find('appointments', id);
   if (!appointment) return null;
-  const before = appointment.state;
 
   store.mutate((draft) => {
     const target = draft.appointments.find((x) => x.id === id);
     target.state = state;
     if (state === 'anullada') target.cancelReason = reason;
     target.updatedAt = nowStamp();
-  }, auditEntry({
-    action: 'state', entity: 'appointment', entityId: id,
-    studentId: appointment.studentIds?.[0] || '',
-    author: currentAuthor(),
-    summary: `Cita del ${dateOf(appointment.start)}: ${before} → ${state}${reason ? ` (${reason})` : ''}`,
-  }));
+  });
 
   return store.find('appointments', id);
 }
 
-/** Reprograma una cita i ho registra a l'auditoria. */
+/** Reprograma una cita. */
 export function rescheduleAppointment(id, start, end) {
   const appointment = store.find('appointments', id);
   if (!appointment) return null;
-  const before = { start: appointment.start, end: appointment.end };
 
   store.mutate((draft) => {
     const target = draft.appointments.find((x) => x.id === id);
@@ -396,13 +357,7 @@ export function rescheduleAppointment(id, start, end) {
     target.end = end;
     if (target.state === 'programada' || target.state === 'confirmada') target.state = 'reprogramada';
     target.updatedAt = nowStamp();
-  }, auditEntry({
-    action: 'reschedule', entity: 'appointment', entityId: id,
-    studentId: appointment.studentIds?.[0] || '',
-    author: currentAuthor(),
-    summary: `Cita reprogramada: ${before.start} → ${start}`,
-    changes: { start: [before.start, start], end: [before.end, end] },
-  }));
+  });
 
   return store.find('appointments', id);
 }
@@ -424,7 +379,7 @@ export function recordFromAppointment(appointment, patch = {}) {
   store.mutate((draft) => {
     const target = draft.appointments.find((x) => x.id === appointment.id);
     if (target) target.recordId = record.id;
-  }, null);
+  });
 
   return record;
 }
@@ -447,11 +402,13 @@ export function mapAppointmentTypeToRecordType(type) {
    Configuració, importació i exportació
    ------------------------------------------------------------------------- */
 
-/** Modifica la configuració deixant constància a l'auditoria. */
-export function updateSettings(patch, summary = 'Canvi de configuració') {
-  store.patchSettings(patch, auditEntry({
-    action: 'config', entity: 'settings', author: currentAuthor(), summary,
-  }));
+/**
+ * Modifica la configuració.
+ * @param {object} patch Claus de configuració a fusionar.
+ * @param {object} [options] `silent: true` desa sense provocar cap repintat.
+ */
+export function updateSettings(patch, options = {}) {
+  store.patchSettings(patch, options);
 }
 
 /** Construeix el paquet d'exportació completa. */
@@ -468,7 +425,6 @@ export function buildExport({ studentId = '' } = {}) {
 
   if (!studentId) {
     COLLECTIONS.forEach((c) => { payload[c] = clone(state[c]); });
-    payload.audit = clone(state.audit);
   } else {
     const keepRecords = state.records.filter((r) => r.studentIds?.includes(studentId));
     const keepAppointments = state.appointments.filter((a) => a.studentIds?.includes(studentId));
@@ -484,23 +440,14 @@ export function buildExport({ studentId = '' } = {}) {
     payload.demands = clone(state.demands.filter((d) => d.studentId === studentId));
     payload.referrals = clone(state.referrals.filter((r) => r.studentId === studentId));
     payload.consents = clone(state.consents.filter((c) => c.studentId === studentId));
-    payload.audit = clone(state.audit.filter((a) => a.studentId === studentId));
   }
 
   return payload;
 }
 
-/** Registra una exportació a l'auditoria. */
-export function logExport(kind, detail = '') {
-  store.mutate(() => {}, auditEntry({
-    action: 'export', entity: 'data', author: currentAuthor(),
-    summary: `Exportació ${kind}${detail ? ` — ${detail}` : ''}`,
-  }));
-}
-
 /**
  * Calcula les diferències d'una importació sense aplicar-les.
- * Retorna { add, update, auditNew } per col·lecció i en total.
+ * Retorna { detail, add, update } per col·lecció i en total.
  */
 export function previewImport(data) {
   validateImport(data);
@@ -517,10 +464,7 @@ export function previewImport(data) {
     add += a; update += u;
   });
 
-  const auditIds = new Set(state.audit.map((x) => x.id));
-  const auditNew = (data.audit || []).filter((x) => !auditIds.has(x.id)).length;
-
-  return { detail, add, update, auditNew };
+  return { detail, add, update };
 }
 
 /**
@@ -530,19 +474,9 @@ export function previewImport(data) {
  */
 export function applyImport(data, mode = 'merge') {
   validateImport(data);
-  const state = store.getState();
-  const summary = mode === 'replace' ? 'Importació amb substitució completa' : 'Importació amb fusió';
 
   if (mode === 'replace') {
-    const next = migrate({
-      ...data,
-      // El registre d'auditoria sempre es fusiona: mai se sobreescriu.
-      audit: mergeAudit(state.audit, data.audit || []),
-    });
-    next.audit.push(auditEntry({
-      action: 'import', entity: 'data', author: currentAuthor(),
-      summary: `${summary} — ${countEntities(data)} entitats`,
-    }));
+    const next = migrate({ ...data });
     store.setState(next);
     return next;
   }
@@ -552,34 +486,10 @@ export function applyImport(data, mode = 'merge') {
       const incoming = Array.isArray(data[collection]) ? data[collection] : [];
       const byId = new Map(draft[collection].map((x) => [x.id, x]));
       incoming.forEach((item) => {
-        if (!byId.has(item.id)) draft[collection].push(item);
+        if (item?.id && !byId.has(item.id)) draft[collection].push(item);
       });
     });
-    draft.audit = mergeAudit(draft.audit, data.audit || []);
-  }, auditEntry({
-    action: 'import', entity: 'data', author: currentAuthor(),
-    summary: `${summary} — ${countEntities(data)} entitats`,
-  }));
+  });
 
   return store.getState();
-}
-
-function countEntities(data) {
-  return COLLECTIONS.reduce((acc, c) => acc + (Array.isArray(data[c]) ? data[c].length : 0), 0);
-}
-
-/** Fusiona dos registres d'auditoria sense duplicats i ordenats per data. */
-export function mergeAudit(current, incoming) {
-  const seen = new Set(current.map((x) => x.id));
-  const merged = [...current];
-  incoming.forEach((item) => { if (item?.id && !seen.has(item.id)) { seen.add(item.id); merged.push(item); } });
-  return merged.sort((a, b) => String(a.at).localeCompare(String(b.at)));
-}
-
-/** Esborra totes les dades del dispositiu deixant-ne constància prèvia. */
-export function wipeAll() {
-  store.mutate(() => {}, auditEntry({
-    action: 'wipe', entity: 'data', author: currentAuthor(),
-    summary: 'Esborrat total de les dades del dispositiu',
-  }));
 }

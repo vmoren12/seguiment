@@ -10,6 +10,25 @@ import {
   durationMinutes, toISODate, startOfWeek, addDays, age,
 } from '../core/dates.js';
 import { CHAIN_STEPS, LEVEL_AGES } from './schema.js';
+import { getRevision } from '../core/store.js';
+
+/* -------------------------------------------------------------------------
+   Memòria de càlcul
+   Les consultes cares (ordenació de l'alumnat, últim contacte, panell de
+   compliment) es repeteixen a cada repintat. Es guarden fins que l'estat
+   canvia: el comptador de revisions del magatzem fa d'invalidador.
+   ------------------------------------------------------------------------- */
+
+const cache = new Map();
+
+function cached(key, compute) {
+  const revision = getRevision();
+  const hit = cache.get(key);
+  if (hit && hit.revision === revision) return hit.value;
+  const value = compute();
+  cache.set(key, { revision, value });
+  return value;
+}
 
 /* -------------------------------------------------------------------------
    Alumnat
@@ -31,7 +50,10 @@ export function listName(student, presentation = false) {
 
 /** Alumnat viu, ordenat per cognoms. */
 export function allStudents(state) {
-  return sortBy(state.students.filter((s) => !s.annulled), (s) => `${s.surname} ${s.name}`.toLowerCase());
+  return cached('allStudents', () => sortBy(
+    state.students.filter((s) => !s.annulled),
+    (s) => `${s.surname} ${s.name}`.toLowerCase(),
+  ));
 }
 
 /** Filtra l'alumnat amb criteris combinables. */
@@ -135,13 +157,21 @@ export function appointmentsInRange(state, from, to, filters = {}) {
 
 /** Data de l'últim contacte registrat amb un alumne/a. */
 export function lastContactDate(state, studentId) {
-  let last = '';
-  for (const r of state.records) {
-    if (r.annulled || !r.studentIds?.includes(studentId)) continue;
-    const d = dateOf(r.at);
-    if (d > last) last = d;
-  }
-  return last;
+  // Es recorren els registres un sol cop per a tot l'alumnat: fer-ho per
+  // alumne/a costava registres × alumnes a cada repintat de la llista.
+  const map = cached('lastContact', () => {
+    const byStudent = new Map();
+    for (const r of state.records) {
+      if (r.annulled) continue;
+      const d = dateOf(r.at);
+      for (const id of r.studentIds || []) {
+        const current = byStudent.get(id);
+        if (current === undefined || d > current) byStudent.set(id, d);
+      }
+    }
+    return byStudent;
+  });
+  return map.get(studentId) || '';
 }
 
 /** Cites que se solapen amb un interval donat. */
@@ -309,27 +339,35 @@ export function noContactStudents(state, days) {
 
 /** Resum del panell de compliment. */
 export function compliance(state) {
-  const th = state.settings.thresholds || {};
-  const pi = piReviews(state, th.piWarnDays ?? 30);
-  return {
-    piOverdue: pi.filter((x) => x.overdue),
-    piSoon: pi.filter((x) => !x.overdue),
-    agreementsOverdue: overdueTasks(state),
-    referralsPending: pendingReferrals(state),
-    consentsMissing: referralsWithoutConsent(state),
-    contactGap: noContactStudents(state, th.noContactDays ?? 45),
-    demandsUnanswered: demandsWithoutAction(state),
-    chainGaps: allStudents(state)
-      .filter((s) => ['actiu', 'seguiment'].includes(s.status?.value))
-      .map((s) => ({ student: s, chain: chainOf(state, s.id) }))
-      .filter((x) => x.chain.some((step) => step.status === 'buit' && step.expected)),
-  };
+  return cached('compliance', () => {
+    const th = state.settings.thresholds || {};
+    const pi = piReviews(state, th.piWarnDays ?? 30);
+    return {
+      piOverdue: pi.filter((x) => x.overdue),
+      piSoon: pi.filter((x) => !x.overdue),
+      agreementsOverdue: overdueTasks(state),
+      referralsPending: pendingReferrals(state),
+      consentsMissing: referralsWithoutConsent(state),
+      contactGap: noContactStudents(state, th.noContactDays ?? 45),
+      demandsUnanswered: demandsWithoutAction(state),
+      chainGaps: allStudents(state)
+        .filter((s) => ['actiu', 'seguiment'].includes(s.status?.value))
+        .map((s) => ({ student: s, chain: chainOf(state, s.id) }))
+        .filter((x) => x.chain.some((step) => step.status === 'buit' && step.expected)),
+    };
+  });
 }
 
-/** Nombre total d'elements pendents, per al distintiu de navegació. */
+/**
+ * Nombre total d'elements pendents, per al distintiu de navegació.
+ * Es calcula amb les llistes barates: el distintiu es repinta a cada canvi
+ * i no val la pena recórrer la cadena documental de tot l'alumnat.
+ */
 export function alertCount(state) {
-  const c = compliance(state);
-  return c.piOverdue.length + c.agreementsOverdue.length + c.referralsPending.length + c.demandsUnanswered.length;
+  return cached('alertCount', () => piReviews(state, state.settings.thresholds?.piWarnDays ?? 30).filter((x) => x.overdue).length
+    + overdueTasks(state).length
+    + pendingReferrals(state).length
+    + demandsWithoutAction(state).length);
 }
 
 /* -------------------------------------------------------------------------
