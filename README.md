@@ -8,7 +8,6 @@ No cal instal·lar res: s'obre al navegador i funciona també sense connexió. D
 
 Aplicació web per al **seguiment psicopedagògic i l'orientació educativa** a centres de primària i secundària. Pensada per a orientadors, tutors i equips docents que necessiten registrar actuacions amb rapidesa i, alhora, poder justificar-les davant d'una revisió del Departament d'Educació.
 
-No és una eina només per a alumnat NESE o NEE: qualsevol seguiment individualitzat, entrevista amb famílies o coordinació amb serveis externs hi té cabuda.
 
 **Les dades no surten mai del dispositiu.** Tot es desa al navegador (`localStorage`), amb xifratge opcional amb contrasenya.
 
