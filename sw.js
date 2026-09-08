@@ -3,7 +3,7 @@
  * connexió. Només s'hi guarden els fitxers de l'aplicació; cap dada personal
  * passa mai per la memòria cau, que viu al mateix dispositiu.
  */
-const VERSION = 'rumb-v1.2.0';
+const VERSION = 'rumb-v1.2.1';
 
 const ASSETS = [
   './',

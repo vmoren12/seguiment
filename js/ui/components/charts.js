@@ -10,7 +10,7 @@ import { t, fmtNum } from '../../core/i18n.js';
 export function chartBox(title, chart, table) {
   return html`<figure class="chartbox" style="margin:0">
     ${title ? html`<figcaption class="field__label" style="margin-bottom:8px">${title}</figcaption>` : ''}
-    ${chart}
+    <div class="chartscroll">${chart}</div>
     ${table ? html`<details>
       <summary>${t('a11y.chartTable')}</summary>
       ${table}
@@ -63,7 +63,7 @@ export function columnChart(points, { height = 170, title = '' } = {}) {
   const ticks = [0, Math.round(max / 2), max].filter((v, i, a) => a.indexOf(v) === i);
 
   return html`<svg class="chart" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}"
-    role="img" aria-label="${title || t('common.evolution')}" preserveAspectRatio="xMidYMid meet">
+    style="width:${width}px;height:auto" role="img" aria-label="${title || t('common.evolution')}" preserveAspectRatio="xMidYMid meet">
     ${ticks.map((v) => {
     const y = pad.top + innerH - (v / max) * innerH;
     return html`<g>
@@ -108,7 +108,7 @@ export function lineChart(points, { height = 170, title = '' } = {}) {
   const labelEvery = Math.ceil(points.length / 8);
 
   return html`<svg class="chart" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}"
-    role="img" aria-label="${title || t('common.evolution')}" preserveAspectRatio="xMidYMid meet">
+    style="width:${width}px;height:auto" role="img" aria-label="${title || t('common.evolution')}" preserveAspectRatio="xMidYMid meet">
     ${[0, max].map((v) => {
     const y = pad.top + innerH - (v / max) * innerH;
     return html`<g>

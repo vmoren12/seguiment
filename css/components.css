@@ -331,8 +331,17 @@
 
 /* --- Grafics SVG --------------------------------------------------------- */
 /* Mida intrinseca: el dibuix s'encongeix si no hi cap, pero mai s'amplia.
-   Escalant-lo cap amunt, les xifres dels eixos sortien desproporcionades.   */
-.chart { max-width: 100%; height: auto; display: block; overflow: visible; }
+   Escalant-lo cap amunt, les xifres dels eixos sortien desproporcionades.
+   L'amplada la posa cada grafic com a estil en linia, en pixels: ha de
+   guanyar la regla global "svg { width: 1em }" de base.css (pensada per a
+   les icones) i no pot ser "auto", perque en un svg arrel auto equival a
+   100% i el dibuix es tornaria a estirar.                                   */
+svg.chart { max-width: 100%; display: block; overflow: visible; }
+/* Dins del seu contenidor, el grafic conserva la mida real i es desplaça
+   lateralment si no hi cap, com les taules amples: encongir-lo deixaria les
+   etiquetes dels mesos il'legibles en pantalles estretes.                   */
+.chartscroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.chartscroll > svg.chart { max-width: none; }
 .chart text {
   font-family: var(--font); font-size: 11px; fill: var(--text-3);
   font-variant-numeric: tabular-nums;
