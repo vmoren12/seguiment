@@ -327,6 +327,20 @@
 }
 .calev b { font-weight: 600; display: block; }
 .calev[data-state="anullada"], .calev[data-state="noPresentada"] { opacity: .6; text-decoration: line-through; }
+
+/* --- Cites fetes --------------------------------------------------------- */
+/* Fons verd tenue amb els mateixos testimonis d'estat que la resta de la
+   interficie, de manera que funciona tant en tema clar com en fosc.        */
+.calev[data-state="feta"] { background: var(--ok-bg); }
+.calday__ev[data-state="feta"] { background: var(--ok-bg); color: var(--ok); }
+.listitem[data-state="feta"] {
+  background: var(--ok-bg);
+  box-shadow: inset 3px 0 0 var(--ok);
+  border-radius: var(--r2);
+  padding-left: var(--s2); padding-right: var(--s2);
+}
+.table tbody tr[data-state="feta"] { background: var(--ok-bg); }
+.table tbody tr[data-state="feta"]:hover { background: color-mix(in srgb, var(--ok-bg) 70%, var(--surface-2)); }
 .calslot { position: absolute; inset: 0; z-index: 1; background: none; border: 0; cursor: cell; padding: 0; }
 
 /* --- Grafics SVG --------------------------------------------------------- */

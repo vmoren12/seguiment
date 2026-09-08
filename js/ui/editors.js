@@ -659,7 +659,7 @@ export async function closeAppointment(appointmentId, { onSaved } = {}) {
       store.mutate((draft) => {
         const target = draft.appointments.find((x) => x.id === appointmentId);
         if (target) target.recordId = record.id;
-      }, null);
+      });
       onSaved?.(record);
     },
   });

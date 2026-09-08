@@ -5,7 +5,7 @@
 import { uid } from '../core/util.js';
 import { today, schoolYear, nowStamp } from '../core/dates.js';
 
-export const APP_VERSION = '1.2.1';
+export const APP_VERSION = '1.2.2';
 
 /** Autoria i procedència de l'aplicació, per al peu i la secció «Quant a». */
 export const APP_AUTHOR = 'Víctor Moreno de la Torre';

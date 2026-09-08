@@ -22,7 +22,7 @@ function names(state, ids) {
 }
 
 function appointmentRow(state, a, { withDay = false } = {}) {
-  return html`<li class="listitem">
+  return html`<li class="listitem" data-state="${a.state}">
     <span class="listitem__time">${withDay ? fmtDayMonth(a.start).split(',')[0] : fmtTime(a.start)}</span>
     <span class="listitem__main">
       <span class="listitem__title">${names(state, a.studentIds) || tEnum('appointmentType', a.type)}</span>

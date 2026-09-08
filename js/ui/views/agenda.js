@@ -119,7 +119,7 @@ function monthView(state, day, filters) {
         data-out="${out}" data-today="${d === now}" data-sel="${d === day}"
         aria-label="${fmtDate(d)} · ${list.length}">
         <span class="calday__n">${Number(String(d).slice(8))}</span>
-        ${list.slice(0, 2).map((a) => html`<span class="calday__ev" style="border-left-color:${typeColor(state, a.type)}">${fmtTime(a.start)} ${label(state, a)}</span>`)}
+        ${list.slice(0, 2).map((a) => html`<span class="calday__ev" data-state="${a.state}" style="border-left-color:${typeColor(state, a.type)}">${fmtTime(a.start)} ${label(state, a)}</span>`)}
         ${list.length > 2 ? html`<span class="calday__more">+${list.length - 2}</span>` : ''}
       </button>`;
   })}
@@ -214,7 +214,7 @@ function listView(state, day, filters) {
     ${[...byDay.entries()].map(([d, items]) => html`<section>
       <h4 style="margin-bottom:4px">${fmtDayMonth(d)}</h4>
       <ul class="list">
-        ${items.map((a) => html`<li class="listitem">
+        ${items.map((a) => html`<li class="listitem" data-state="${a.state}">
           <span class="listitem__time">${fmtTime(a.start)}</span>
           <span class="listitem__main">
             <button type="button" class="listitem__title" data-act="cal:open" data-id="${a.id}"

@@ -310,7 +310,7 @@ function appointmentsTab(state, s) {
         <th>${t('common.attendees')}</th><th>${t('common.state')}</th><th></th>
       </tr></thead>
       <tbody>
-        ${list.map((a) => html`<tr>
+        ${list.map((a) => html`<tr data-state="${a.state}">
           <td data-th="${t('common.date')}">${fmtDate(a.start)} ${fmtTime(a.start)}</td>
           <td data-th="${t('common.type')}">${tEnum('appointmentType', a.type)}</td>
           <td data-th="${t('common.modality')}">${tEnum('modality', a.modality)}</td>

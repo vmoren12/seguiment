@@ -53,8 +53,8 @@ function notify() {
  * @param {boolean} [options.save=true]    Desa al magatzem local.
  * @param {boolean} [options.silent=false] No notifica els subscriptors.
  */
-export function mutate(mutator, options = {}) {
-  const { save = true, silent = false } = options;
+export function mutate(mutator, options) {
+  const { save = true, silent = false } = options || {};
   const result = mutator(state);
   if (result && typeof result === 'object') state = result;
 
@@ -84,7 +84,7 @@ export async function saveNow() {
  * Amb `silent` el canvi es desa però no provoca cap repintat: és el que
  * s'utilitza mentre s'escriu en un camp, per no perdre'n el focus.
  */
-export function patchSettings(patch, options = {}) {
+export function patchSettings(patch, options) {
   return mutate((draft) => {
     Object.entries(patch).forEach(([key, value]) => {
       const current = draft.settings[key];
